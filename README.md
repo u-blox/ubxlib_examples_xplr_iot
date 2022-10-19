@@ -16,7 +16,7 @@ There are two ways of using this repository depending on what you have installed
 
 If you already have the Nordic nRFConnect SDK installed and know how to use it, you can just clone this repository and go on from there directly. If the environment is installed in the standard location it will be detected automatically.
 
-    git clone --recursive https://github.com/plerup/xplriot1_examples.git
+    git clone --recursive https://github.com/u-blox/ubxlib_examples_xplr_iot
 
 On the other hand if this is your first encounter with the Nordic nrf53 chipset and possibly also with git, a complete installation script which includes everything needed for development is provided. In this case [goto this page](install/README.md) for more information about the installation process.
 
