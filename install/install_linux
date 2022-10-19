@@ -108,8 +108,8 @@ fi
 
 echo "Getting the source code repositories..."
 cd ..
-git clone --recursive -q https://github.com/plerup/xplriot1_examples.git
-cd xplriot1_examples
+git clone --recursive -q https://github.com/u-blox/ubxlib_examples_xplr_iot
+cd ubxlib_examples_xplr_iot
 ./do -n $ENV_DIR/ncs -t $ENV_DIR/$ARM_VER save
 
 # Enable free use of usb ports

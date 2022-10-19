@@ -37,7 +37,7 @@ However it is still possible to build and flash the examples into an XPLR-IOT-1 
 
 Please note that the usb cable should also be inserted if you want to see printouts from the example programs.
 
-The actual flash process is different if you have a debug unit or are just using the serial cable. In the first case everything is done automatically if the debug is connected to the XPLR-IOT-1. In the latter case manual interaction is needed. You must first turn off the XPLR-IOT-1 with its on/off button. Then press down button 1 on the top side of the unit and keep it pressed while turning on the device again. The unit is now in bootloader mode and the flashing process can begin. Flashing performed by this repository tools will prompt you for confirmation of that the unit is in bootloader mode before starting.
+The actual flash process is different if you have a debuger unit or are just using the serial cable. In the first case everything is done automatically if the debug is connected to the XPLR-IOT-1. In the latter case manual interaction is needed. You must first turn off the XPLR-IOT-1 with its on/off button. Then press down button 1 on the top side of the unit and keep it pressed while turning on the device again. The unit is now in bootloader mode and the flashing process can begin. Flashing performed by this repository tools will prompt you for confirmation of that the unit is in bootloader mode before starting.
 
 **Also please note** that by flashing these examples you will overwrite the "Sensor Aggregation" firmware which is installed in a fresh XPLR-IOT-1. Should you later want to restore that firmware, [this page](https://github.com/u-blox/XPLR-IOT-1-software) will show you how.
 
@@ -45,7 +45,7 @@ The actual flash process is different if you have a debug unit or are just using
 
 Once you have everything installed and have connected your XPLR-IOT-1, you can start exploring the functionality of this repository.
 
-Begin by starting a command window. Then change working directory to where the repository was cloned. If you have used the installation script this will be in a directory underneath your home directory named xplriot1\xplriot1_examples.
+Begin by starting a command window. Then change working directory to where the repository was cloned. If you have used the installation script this will be in a directory underneath your home directory named xplriot1\ubxlib_examples_xplr_iot.
 
 Please note that if you have installed the nRFConnect SDK via the "Toolchain Manager" desktop app you may have to start the command prompt via the corresponding entry in the dropdown list. This is the case if Python is not available in your standard path.
 

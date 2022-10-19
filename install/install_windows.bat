@@ -94,11 +94,11 @@ rmdir /S /Q %DriverName%
 
 cd ..
 echo Getting the source code repositories...
-call git clone --recursive -q https://github.com/plerup/xplriot1_examples.git
-cd xplriot1_examples
+call git clone --recursive -q https://github.com/u-blox/ubxlib_examples_xplr_iot
+cd ubxlib_examples_xplr_iot
 call python do -n %ENV_DIR%\ncs -t %ENV_DIR%\%GCCName% save
 rem Avoid owner protection problems as we have cloned as admin
-call :SilentCom "takeown /r /f %ROOT_DIR%\xplriot1_examples"
+call :SilentCom "takeown /r /f %ROOT_DIR%\ubxlib_examples_xplr_iot"
 call git config --global --add safe.directory %GIT_ENV_DIR%/ncs/zephyr
 
 echo Ended at: %date% %time%
