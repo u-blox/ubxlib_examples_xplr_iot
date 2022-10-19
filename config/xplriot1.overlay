@@ -1,0 +1,157 @@
+/*
+Ovelay file for the U-blox XPLR-IOT-1 board
+based on the Nordic nrf53dk board
+ */
+
+#include "xplriot1-pinctrl.dtsi"
+
+// I2C and the board sensors
+&i2c1 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	bme280@76 {
+		compatible = "bosch,bme280";
+		reg = <0x76>;
+		label = "BME280";
+	};
+
+	adxl345@1d {
+		compatible = "adi,adxl345";
+		reg = <0x1d>;
+		label = "ADXL345";
+	};
+
+	lis3mdl@1e {
+		compatible = "st,lis3mdl-magn";
+		reg = <0x1e>;
+		label = "LIS3MDL";
+	};
+
+	fxas21002@20 {
+		compatible = "nxp,fxas21002";
+		reg = <0x20>;
+		label = "FXAS21002";
+	};
+
+	lis2dh@19 {
+		compatible = "st,lis2dh";
+		reg = <0x19>;
+		label = "LIS2DH";
+	};
+
+	ltr303: ltr303@29 {
+		compatible = "ltr,303als";
+		reg = <0x29>;
+		label = "LTR303";
+	};
+
+	bq27421@55 {
+		compatible = "ti,bq274xx";
+		label = "BQ274XX";
+		reg = <0x55>;
+		design-voltage = <3700>;
+		design-capacity = <1200>;
+		taper-current = <45>;
+		terminate-voltage = <3000>;
+	};
+};
+
+
+// Console uart
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+// SARA-R5 uart. Only available when i2c is not used
+&uart1 {
+	status = "disabled";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
+	hw-flow-control;
+};
+
+// Nina W15 uart, shared with Sara-R5 when i2c is used
+&uart2 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart2_default>;
+	pinctrl-1 = <&uart2_sleep>;
+	pinctrl-names = "default", "sleep";
+	hw-flow-control;
+};
+
+// MaxM10S uart
+&uart3 {
+	status = "okay";
+	current-speed = <9600>;
+	pinctrl-0 = <&uart3_default>;
+	pinctrl-1 = <&uart3_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+// Buttons
+&button0 {
+	gpios = <&gpio0 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+	label = "Push button 1";
+};
+
+&button1 {
+	gpios = <&gpio0 28 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+	label = "Push button 2";
+};
+
+// PWM for Led control brightness
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&led0 {
+	gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+	label = "Red LED";
+};
+
+&led1 {
+	gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+	label = "Green LED";
+};
+
+&led2 {
+	gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+	label = "Blue LED";
+};
+
+// Leds at PWM channels
+/{
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led_0 {
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "Red Led";
+		};
+
+		pwm_led1: pwm_led_1 {
+			pwms = <&pwm0 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "Green Led";
+		};
+
+		pwm_led2: pwm_led_2 {
+			pwms = <&pwm0 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "Blue Led";
+		};
+
+	};
+};

@@ -1,0 +1,201 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Select example",
+      "linux": {
+        "command": "python3 do select -e ${input:select}"
+      },
+      "windows": {
+        "command": "python do select -e ${input:select}"
+      },
+      "group": "build",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "group": "builders",
+        "panel": "shared",
+        "clear": true
+      }
+    },
+    {
+      "label": "Build \"$DEF_EX\"",
+      "linux": {
+        "command": "python3 do build"
+      },
+      "windows": {
+        "command": "python do build"
+      },
+      "group": "build",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "group": "builders",
+        "panel": "shared",
+        "clear": true
+      }
+    },
+    {
+      "label": "Rebuild \"$DEF_EX\"",
+      "linux": {
+        "command": "python3 do build -p"
+      },
+      "windows": {
+        "command": "python do build -p"
+      },
+      "group": "build",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "group": "builders",
+        "panel": "shared",
+        "clear": true
+      }
+    },
+    {
+      "label": "Flash \"$DEF_EX\"",
+      "linux": {
+        "command": "python3 do flash"
+      },
+      "windows": {
+        "command": "python do flash"
+      },
+      "group": "build",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "group": "builders",
+        "panel": "shared",
+        "clear": true
+      }
+    },
+    {
+      "label": "Build and run \"$DEF_EX\"",
+      "group": "build",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Flash \"$DEF_EX\"",
+        "Serial monitor",
+        "Reset"
+      ]
+    },
+    {
+      "label": "FlashWhenChanged",
+      "linux": {
+        "command": "python3 do flash --when-changed"
+      },
+      "windows": {
+        "command": "python do flash --when-changed"
+      },
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "group": "builders",
+        "panel": "shared",
+        "clear": true
+      }
+    },
+    {
+      "label": "Reset",
+      "linux": {
+        "command": "python3 do reset"
+      },
+      "windows": {
+        "command": "python do reset"
+      },
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "group": "builders",
+        "panel": "shared"
+      },
+    },
+    {
+      "label": "PreDebug",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "FlashWhenChanged",
+        "Serial monitor"
+      ]
+    },
+    {
+      "label": "Serial monitor",
+      "type": "shell",
+      "linux": {
+        "command": "python3 do monitor"
+      },
+      "windows": {
+        "command": "python do monitor"
+      },
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "isBackground": true,
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated",
+        "showReuseMessage": true,
+        "clear": true,
+        "group": "builders"
+      },
+      "problemMatcher": {
+        "owner": "typescript",
+        "fileLocation": "relative",
+        "pattern": {
+          "regexp": "thisShouldNotMatch",
+          "file": 1,
+          "location": 2,
+          "severity": 3,
+          "code": 4,
+          "message": 5
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "thisShouldNotMatch",
+          "endsPattern": "^--- Quit:"
+        }
+      },
+      "runOptions": {}
+    }
+  ],
+  "inputs": [
+    {
+      "type": "pickString",
+      "id": "select",
+      "description": "Select example",
+      "options": $EXAMPLES,
+    }
+  ]
+}

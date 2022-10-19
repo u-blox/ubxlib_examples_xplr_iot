@@ -1,0 +1,22 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug",
+      "cwd": "$BUILD_DIR",
+      "executable": "./zephyr/$EXE_FILE",
+      "request": "launch",
+      "type": "cortex-debug",
+      "device": "NRF5340_XXAA_APP",
+      "interface": "swd",
+      "servertype": "jlink",
+      "runToEntryPoint": "main",
+      "armToolchainPath": "$TC_DIR",
+      "gdbPath": "$GDB_PATH",
+      "postLaunchCommands": [
+        "add-symbol-file ./zephyr/zephyr.elf 0"
+      ],
+      "preLaunchTask": "PreDebug"
+    }
+  ]
+}

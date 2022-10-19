@@ -1,0 +1,15 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"bluetooth.h": "c",
+			"leds.h": "c",
+			"stdio.h": "c",
+			"stdbool.h": "c"
+		}
+	}
+}

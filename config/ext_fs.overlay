@@ -1,0 +1,44 @@
+/ {
+  chosen {
+    nordic,pm-ext-flash = &mx25r64;
+  };
+};
+
+/ {
+  fstab {
+    compatible = "zephyr,fstab";
+    lfs: lfs {
+      compatible = "zephyr,fstab,littlefs";
+      mount-point = "/lfs";
+      partition = <&lfs1_part>;
+      read-size = <16>;
+      prog-size = <16>;
+      cache-size = <64>;
+      lookahead-size = <32>;
+      block-cycles = <512>;
+    };
+  };
+};
+
+&flash0 {
+  partitions {
+      storage_partition: partition@fa000 {
+      label = "storage0";
+    };
+  };
+};
+
+
+&mx25r64 {
+  partitions {
+    compatible = "fixed-partitions";
+    #address-cells = <1>;
+    #size-cells = <1>;
+
+    lfs1_part: partition@120000 {
+      label = "storage";
+      reg = <0x120000 0x6e0000>;
+    };
+  };
+};
+

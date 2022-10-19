@@ -1,0 +1,9 @@
+!*
+.settings
+.state
+_build
+c_cpp_properties.json
+tasks.json
+launch.json
+.cortex-debug.registers.state.json
+settings.json
