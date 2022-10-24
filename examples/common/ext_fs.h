@@ -25,23 +25,40 @@ bool extFsInit();
 
 /**
  * Get the file system mount point.
- * @return  Pointer to the mount point structure
+ * @return  Pointer to the mount point structure.
  */
 struct fs_mount_t *extFsMountPoint();
 
 /**
- * Get the full file system path including mount point name
- * @return  Pointer to the full path
+ * Get the full file system path including mount point name.
+ * @return  Pointer to the full path.
  */
 const char *extFsPath(const char *fileName);
 
 /**
- * Get the size of the free space on the file system in kB
- * @return Actual free size
+ * Get the size of the free space on the file system in kB.
+ * @return Actual free size.
  */
-unsigned long extFSFree();
+unsigned long extFsFree();
+
+/**
+ * Check if a file exists
+ * @param   filePath  Complete file name path.
+ * @return            True if the file exists.
+ */
+bool extFsFileExists(const char *fileName);
+
+/**
+ * Get the size of file in bytes
+ * @param   filePath  Complete file name path
+ * @param   size      Place to put the size
+ * @return            True if the file exists
+ *                    and size could be read.
+ */
+bool extFsFileSize(const char *fileName, size_t *size);
 
 /**
  * Print a simple listing of the file system contents
+ * to the console.
  */
 void extFSList();

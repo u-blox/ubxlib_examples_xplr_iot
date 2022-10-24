@@ -32,9 +32,9 @@
 
 void main()
 {
-    initSensors();
+    sensorsInit();
     while (1) {
-        printf("%s\n%s\n", pollTempSensor(), pollAccelerometer());
+        printf("%s\n%s\n%s\n", pollTempSensor(), pollAccelerometer(), pollLightSensor());
         k_msleep(2000);
     }
 }

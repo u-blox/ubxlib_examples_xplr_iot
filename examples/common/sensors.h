@@ -17,7 +17,7 @@
 /**
  * Initiate environment sensor and accelerometer
  */
-void initSensors();
+void sensorsInit();
 
 /**
  * Get a string with environment sensor values
@@ -28,3 +28,13 @@ const char *pollTempSensor();
  * Get a string with accelerometer values
  */
 const char *pollAccelerometer();
+
+/**
+ * Get a string with light sensor value
+ */
+const char *pollLightSensor();
+
+/**
+ * Get light sensor value in lux
+ */
+int32_t getLightSensor();

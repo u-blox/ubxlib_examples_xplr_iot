@@ -44,7 +44,7 @@ const char *extFsPath(const char *fileName)
     return path;
 }
 
-unsigned long extFSFree()
+unsigned long extFsFree()
 {
     unsigned long free = 0;
     struct fs_statvfs sbuf;
@@ -52,6 +52,20 @@ unsigned long extFSFree()
         free = sbuf.f_frsize * sbuf.f_bfree / 1024;
     }
     return free;
+}
+
+bool extFsFileExists(const char *fileName)
+{
+    static struct fs_dirent dirent;
+    return fs_stat(fileName, &dirent) == 0;
+}
+
+bool extFsFileSize(const char *fileName, size_t *size)
+{
+    static struct fs_dirent dirent;
+    bool ok = fs_stat(fileName, &dirent) == 0;
+    *size = ok ? dirent.size : 0;
+    return ok;
 }
 
 void extFSList()

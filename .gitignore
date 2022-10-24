@@ -7,3 +7,5 @@ tasks.json
 launch.json
 .cortex-debug.registers.state.json
 settings.json
+examples/playground/*
+!examples/playground/README.md

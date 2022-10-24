@@ -20,6 +20,12 @@ include(${CMAKE_CURRENT_LIST_DIR}/../config/xplriot1.cmake)
 if (NOT NO_DEBUG)
   list(APPEND CONF_FILE ${CMAKE_CURRENT_LIST_DIR}/debug.conf)
 endif()
+if (ENABLE_LOGGING)
+  list(APPEND CONF_FILE ${CMAKE_CURRENT_LIST_DIR}/logging.conf)
+endif()
+if (NOT NO_SENSORS)
+  list(APPEND ZEPHYR_EXTRA_MODULES ${CMAKE_CURRENT_LIST_DIR}/../config/ltr303)
+endif()
 # And Zephyr
 find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
 # All example source code

@@ -20,7 +20,7 @@ If you already have the Nordic nRFConnect SDK installed and know how to use it, 
 
 On the other hand if this is your first encounter with the Nordic nrf53 chipset and possibly also with git, a complete installation script which includes everything needed for development is provided. In this case [goto this page](install/README.md) for more information about the installation process.
 
-You can of course also install everything yourself following the instructions at the [Nordic web site](https://www.nordicsemi.com/Products/Development-software/nrf-connect-sdk). The repository has been tested with nRF Connect versions 1.6.1 up to 2.1.0. However some of the examples do require at least version 1.9.0.
+You can of course also install everything yourself following the instructions at the [Nordic web site](https://www.nordicsemi.com/Products/Development-software/nrf-connect-sdk). The repository has been tested with nRF Connect versions 1.7.0 up to 2.1.0. However some of the examples do require at least version 1.9.0.
 
 It also works if you have your own tailored installation. You just have to specify where to find the nRFConnect environment parts. More about this below.
 
@@ -28,8 +28,7 @@ It also works if you have your own tailored installation. You just have to speci
 
 To use this repo you need at least an XPLR-IOT-1 device. Please note though that this device doesn't contain any debug chip so in order to be able to do debugging you need to have some kind of debugger/programmer device. This would typically be a JLink debugger.
 
-You also need a 10 pin programmer cable to connect the XPLR-IOT-1 and the programmer. Examples shown below:
-
+You also need a 10 pin programmer cable to connect the XPLR-IOT-1 and the programmer. Example shown below:
 
 ![Jlink](readme_images/jlink.png)
 
@@ -79,6 +78,15 @@ Then select the green arrow in the top section and a debugging session will star
 The program will stop at the first line in the program. Experiment with the different debug functions in Visual Studio Code such as stepping, checking variables etc.
 
 You can then start modifying the examples to you liking or add your own, more about that further down.
+
+# Creating your own examples
+
+There are three ways you can experiment and create new example applications.
+
+* Edit the existing examples and rebuild.
+* Copy one existing example to the *playground* directory and edit and build from there. Everything added here will be excluded from git operations.
+* Create a directory outside of this repo and add a corresponding directory structure and source files there. If you then set the application directory as you default and start the *do* command from there it will pick up your example application instead of the ones in the repo.
+
 
 
 # Advanced usage
@@ -164,6 +172,7 @@ There are some cmake variables you can define for controlling these files.
 | NO_SENSORS | When set i2c is not included in the build and this enables the use of all 4 uarts. This means that both the Nina W15 and the Sara R5 modules can be used at the same time |
 | EXT_FS | Enables use of a file system on the external SPI-flash memory. Used in the "filesystem" example|
 | NO_DEBUG | By default debug optimization is used for compilation. Set this variable to disable that|
+| ENABLE_LOGGING | Zephyr logging is disabled by default. Set this variable to enable it.
 
 ### Bootloader
 

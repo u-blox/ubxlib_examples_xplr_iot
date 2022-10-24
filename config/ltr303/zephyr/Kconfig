@@ -1,0 +1,10 @@
+# LTR303 light sensor configuration options
+
+# Copyright (c) 2019 Actinius
+# SPDX-License-Identifier: Apache-2.0
+
+config LTR303
+	bool "LTR-303ALS-01 Light Sensor"
+	depends on I2C
+	help
+	  Enable driver for LTR303 light sensors.

@@ -34,8 +34,10 @@ from pathlib import Path
 settings = dict()
 state = dict()
 has_jlink = False
+cwd = os.getcwd()
 top_dir = os.path.dirname(os.path.realpath(__file__))
-exe_suffix = "" if 'linux' in sys.platform else ".exe"
+is_linux = 'linux' in sys.platform
+exe_suffix = "" if is_linux else ".exe"
 examples_root = top_dir + "/examples/"
 args = ""
 
@@ -188,7 +190,7 @@ def save():
 
 #--------------------------------------------------------------------
 
-state_file_name = ".state"
+state_file_name = cwd + "/.state"
 
 def read_state():
     global state
@@ -206,20 +208,26 @@ def save_state():
 #--------------------------------------------------------------------
 
 def vscode_files():
-    vscode_dir = ".vscode"
+    vscode_dir = cwd + "/.vscode"
+    templ_dir = top_dir + "/.vscode"
+    do_com = "python3" if is_linux else "python"
+    do_com += f" \\\"{top_dir}/do\\\""
+    if not exists(vscode_dir):
+        os.mkdir(vscode_dir)
     gcc_bin_dir = Path(os.path.expandvars(settings['gcc_dir']) + "/bin").as_posix()
 
     # Generate configuration file for vscode from templates
     # Tasks
-    with open(vscode_dir + "/tasks_tmpl.json", "r") as f:
+    with open(templ_dir + "/tasks_tmpl.json", "r") as f:
         tasks = f.read()
+    tasks = re.sub("\$DO", do_com, tasks)
     tasks = re.sub("\$EXAMPLES", re.sub("'", "\"", f"{examples}"), tasks)
     tasks = re.sub("\$DEF_EX", f"{args.example}", tasks)
     with open(vscode_dir + "/tasks.json", "w") as f:
         f.write(tasks)
 
     # Launch
-    with open(vscode_dir + "/launch_tmpl.json", "r") as f:
+    with open(templ_dir + "/launch_tmpl.json", "r") as f:
         launch = f.read()
     launch = re.sub("\$BUILD_DIR", Path(f"{settings['build_dir']}/{args.example}").as_posix(), launch)
     launch = re.sub("\$EXE_FILE", os.path.basename(get_exe_file(args, not args.no_bootloader, has_jlink, False)), launch)
@@ -249,7 +257,7 @@ def vscode_files():
                     includes += re.sub("-I", "        \"", i) + "\",\n"
                 includes = re.sub(r",\n$", "", includes)
                 break
-    with open(vscode_dir + "/c_cpp_properties_tmpl.json", "r") as f:
+    with open(templ_dir + "/c_cpp_properties_tmpl.json", "r") as f:
         properties = f.read()
     comp_exe = sorted(Path(gcc_bin_dir).rglob(f"*gcc{exe_suffix}"))[0].as_posix()
     properties = re.sub("\$COMP_EXE", comp_exe, properties)
@@ -262,9 +270,9 @@ def vscode_files():
 
 def vscode():
     build()
-    os.chdir(top_dir)
+    os.chdir(cwd)
     vscode_files()
-    exec_command(f"code examples.code-workspace -g {examples_root}{args.example}/src/main.c")
+    exec_command(f"code . -g {examples_root}{args.example}/src/main.c")
 
 #--------------------------------------------------------------------
 
@@ -275,6 +283,7 @@ def select():
 #--------------------------------------------------------------------
 
 def set_env():
+    os.environ['DO_TOP_DIR'] = top_dir
     os.environ['ZEPHYR_BASE'] = os.path.expandvars(settings['ncs_dir']) + "/zephyr"
     if 'gcc_dir' in settings:
         os.environ['GNUARMEMB_TOOLCHAIN_PATH'] = os.path.expandvars(
@@ -283,7 +292,7 @@ def set_env():
     os.environ['UBXLIB_DIR'] = os.path.expandvars(settings['ubxlib_dir'])
     if not settings['no_bootloader']:
         os.environ['USE_BOOTLOADER'] = "1"
-    if not 'linux' in sys.platform:
+    if not is_linux:
         # Make sure that JLink directory is in the path when installed
         try:
             import winreg
@@ -292,7 +301,6 @@ def set_env():
             os.environ['PATH'] = os.environ['PATH'] + ";" + winreg.QueryValueEx(key, "InstallPath")[0]
         except:
             print("Failed to detect Jlink installation")
-
 
 
 #--------------------------------------------------------------------
@@ -306,7 +314,7 @@ def check_directories():
         if 'ZEPHYR_BASE' in os.environ:
             settings['ncs_dir'] = os.path.realpath(os.environ['ZEPHYR_BASE'] + "/..")
         else:
-            ncs_dir = os.environ['HOME'] if 'linux' in sys.platform else os.environ['SystemDrive']
+            ncs_dir = os.environ['HOME'] if is_linux else os.environ['SystemDrive']
             ncs_dir += "/ncs"
             version = ""
             if exists(ncs_dir):
@@ -339,7 +347,7 @@ def check_directories():
                 path = ""
                 gcc_bin_dir = sorted(Path(tc_dir).rglob(f"*gcc{exe_suffix}"))[0].parent
                 settings['gcc_dir'] = (gcc_bin_dir  / '../').resolve().as_posix()
-                if 'linux' in sys.platform:
+                if is_linux:
                     path += tc_dir + "/usr/bin:"
                     path += tc_dir + "/usr/local/bin:"
                     path += tc_dir + "/opt/bin:"
@@ -380,11 +388,6 @@ if __name__ == "__main__":
 
     os.chdir(top_dir)
     check_jlink()
-    examples = []
-    for entry in os.scandir(examples_root):
-        if entry.is_dir() and exists(examples_root + entry.name + "/src"):
-            examples.append(entry.name)
-    examples.sort()
 
     parser = argparse.ArgumentParser()
     parser.add_argument("operation", nargs='+',
@@ -421,6 +424,19 @@ if __name__ == "__main__":
 
     if not args.operation[0] in locals():
         error_exit(f"Invalid operation: \"{args.operation[0]}\"")
+
+    if not top_dir in cwd and exists(f"{cwd}/src"):
+        # Application outside of the repo
+        examples_root = os.path.realpath(cwd + "/..")
+        if args.example == None:
+            args.example = os.path.split(cwd)[1]
+        examples_root += "/"
+
+    examples = []
+    for entry in os.scandir(examples_root):
+        if entry.is_dir() and exists(examples_root + entry.name + "/src"):
+            examples.append(entry.name)
+    examples.sort()
 
     read_settings()
     read_state()

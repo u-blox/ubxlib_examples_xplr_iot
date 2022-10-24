@@ -3,12 +3,7 @@
   "tasks": [
     {
       "label": "Select example",
-      "linux": {
-        "command": "python3 do select -e ${input:select}"
-      },
-      "windows": {
-        "command": "python do select -e ${input:select}"
-      },
+      "command": "$DO select -e ${input:select}",
       "group": "build",
       "problemMatcher": [
         "$gcc"
@@ -25,12 +20,7 @@
     },
     {
       "label": "Build \"$DEF_EX\"",
-      "linux": {
-        "command": "python3 do build"
-      },
-      "windows": {
-        "command": "python do build"
-      },
+      "command": "$DO build",
       "group": "build",
       "problemMatcher": [
         "$gcc"
@@ -47,12 +37,7 @@
     },
     {
       "label": "Rebuild \"$DEF_EX\"",
-      "linux": {
-        "command": "python3 do build -p"
-      },
-      "windows": {
-        "command": "python do build -p"
-      },
+      "command": "$DO build -p",
       "group": "build",
       "problemMatcher": [
         "$gcc"
@@ -69,12 +54,7 @@
     },
     {
       "label": "Flash \"$DEF_EX\"",
-      "linux": {
-        "command": "python3 do flash"
-      },
-      "windows": {
-        "command": "python do flash"
-      },
+      "command": "$DO flash",
       "group": "build",
       "problemMatcher": [
         "$gcc"
@@ -101,12 +81,7 @@
     },
     {
       "label": "FlashWhenChanged",
-      "linux": {
-        "command": "python3 do flash --when-changed"
-      },
-      "windows": {
-        "command": "python do flash --when-changed"
-      },
+      "command": "$DO flash --when-changed",
       "problemMatcher": [
         "$gcc"
       ],
@@ -122,12 +97,7 @@
     },
     {
       "label": "Reset",
-      "linux": {
-        "command": "python3 do reset"
-      },
-      "windows": {
-        "command": "python do reset"
-      },
+      "command": "$DO reset",
       "problemMatcher": [
         "$gcc"
       ],
@@ -151,12 +121,7 @@
     {
       "label": "Serial monitor",
       "type": "shell",
-      "linux": {
-        "command": "python3 do monitor"
-      },
-      "windows": {
-        "command": "python do monitor"
-      },
+      "command": "$DO monitor",
       "options": {
         "cwd": "${workspaceFolder}"
       },

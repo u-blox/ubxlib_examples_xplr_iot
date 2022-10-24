@@ -64,7 +64,7 @@ static void messageIndicationCallback(int32_t numUnread, void *pParam)
 
 void main()
 {
-    initSensors();
+    sensorsInit();
     // Remove the line below if you want the log printouts from ubxlib
     uPortLogOff();
     // Initiate ubxlib
