@@ -211,7 +211,7 @@ def vscode_files():
     vscode_dir = cwd + "/.vscode"
     templ_dir = top_dir + "/.vscode"
     do_com = "python3" if is_linux else "python"
-    do_com += f" \\\"{top_dir}/do\\\""
+    do_com += " \\\"" + Path(top_dir).as_posix() + "/do\\\""
     if not exists(vscode_dir):
         os.mkdir(vscode_dir)
     gcc_bin_dir = Path(os.path.expandvars(settings['gcc_dir']) + "/bin").as_posix()
