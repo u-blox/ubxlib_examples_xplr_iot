@@ -79,7 +79,7 @@ void main()
                 printf("* Timeout\n");
                 ledSet(RED_LED, true);
             } else {
-              printf("* Failed to get position: %d\n", errorCode);
+                printf("* Failed to get position: %d\n", errorCode);
             }
             uNetworkInterfaceDown(deviceHandle, U_NETWORK_TYPE_GNSS);
         } else {

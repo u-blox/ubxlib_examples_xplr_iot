@@ -30,9 +30,9 @@
 
 
 struct ltr303_data {
-	const struct device *i2c;
-	uint16_t ch0_sample;
-	uint16_t ch1_sample;
+    const struct device *i2c;
+    uint16_t ch0_sample;
+    uint16_t ch1_sample;
 };
 
 #endif /* _SENSOR_LTR303_ */
