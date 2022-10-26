@@ -291,7 +291,7 @@ def set_env():
     os.environ['ZEPHYR_TOOLCHAIN_VARIANT'] = "gnuarmemb"
     os.environ['UBXLIB_DIR'] = os.path.expandvars(settings['ubxlib_dir'])
     if not settings['no_bootloader']:
-        os.environ['USE_BOOTLOADER'] = "1"
+        os.environ['USE_BL'] = "1"
     if not is_linux:
         # Make sure that JLink directory is in the path when installed
         try:

@@ -79,6 +79,13 @@ The program will stop at the first line in the program. Experiment with the diff
 
 You can then start modifying the examples to you liking or add your own, more about that further down.
 
+# Using the nRFConnect Visual Studio Code extension
+
+If you are used to using the nRFConnect Visual Studio Code extension and prefer to use it instead of the Visual Studio environment created by the *do* command, then that is of course also possible.
+
+In this case just open Visual Studio Code and then select *Add an existing application* in the nRF Connect extension. Browse to one of the example directory and choose open. Then do a *Add build configuration* in the normal way using the *nrf5340dk_nrf5340_cpuapp* as board. After that you can use the different operations available from the nRF Connect extension for building and debugging etc. You find all the used overlay and configuration files in the *config* directory of this repo. Please note that builds created this way will not use the bootloader.
+
+
 # Creating your own examples
 
 There are three ways you can experiment and create new example applications.
@@ -88,10 +95,9 @@ There are three ways you can experiment and create new example applications.
 * Create a directory outside of this repo and add a corresponding directory structure and source files there. If you then set the application directory as you default and start the *do* command from there it will pick up your example application instead of the ones in the repo.
 
 
-
 # Advanced usage
 
-All the operations performed in this repo are controlled by one central command named "do". This command is executed as described above in a command window with the default directory set to the root of the repo.
+All the operations performed in this repo are controlled by one central command named *do*. This command is executed as described above in a command window with the default directory set to the root of the repo.
 
 Below is the help information for the command as shown when issuing "do --help". More thorough description below.
 

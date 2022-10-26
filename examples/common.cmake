@@ -12,6 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Setup default for possible missing environment variables
+if (NOT DEFINED ENV{UBXLIB_DIR})
+  set(ENV{UBXLIB_DIR} ${CMAKE_CURRENT_LIST_DIR}/../ubxlib)
+endif()
+
 # Include ubxlib
 include($ENV{UBXLIB_DIR}/zephyr/ubxlib.cmake)
 # Add XPLR-IOT-1 specifics, remove this for other boards
