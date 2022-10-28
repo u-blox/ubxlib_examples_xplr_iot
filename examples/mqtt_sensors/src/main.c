@@ -93,6 +93,12 @@ void main()
                                                   (void *)&messagesAvailable);
                     // Get a unique topic name for this test
                     uSecurityGetSerialNumber(deviceHandle, topic);
+                    if (topic[0] == '"') {
+                        // Remove quotes
+                        size_t len = strlen(topic);
+                        memmove(topic, topic + 1, len);
+                        topic[len - 2] = 0;
+                    }
                     topic[4] = 0; // Truncate
                     if (uMqttClientSubscribe(pContext, topic,
                                              U_MQTT_QOS_EXACTLY_ONCE)) {
