@@ -45,6 +45,12 @@ static const uNetworkType_t gNetworkType = U_NETWORK_TYPE_CELL;
 uDeviceCfg_t gDeviceCfg;
 int curr_led = 0;
 
+void ledChangecolor(int newColorId){
+    ledSet(curr_led, false);
+    curr_led = newColorId;
+    ledSet(curr_led, true);
+}
+
 // Callback for unread message indications.
 static void messageIndicationCallback(int32_t numUnread, void *pParam)
 {
@@ -88,8 +94,7 @@ void main()
                 connection.pUserNameStr = ACCOUNT_NAME;
                 connection.pPasswordStr = ACCOUNT_PASSWORD;
                 if (uMqttClientConnect(pContext, &connection) == 0) {
-                    curr_led = 1;
-                    ledSet(curr_led, true);
+                    ledChangeColor(1);
                     uMqttClientSetMessageCallback(pContext,
                                                   messageIndicationCallback,
                                                   (void *)&messagesAvailable);
@@ -111,7 +116,7 @@ void main()
                         printf("Send message \"exit\" to disconnect\n");
                         bool done = false;
                         int i = 0;
-                        while (!done) {
+                        while (!done && i < 3) {
                             char buffer[25];
                             if (messagesAvailable) {
                                 char buffer[25];
@@ -129,14 +134,12 @@ void main()
                                 messagesAvailable = false;
                             } else {
                                 snprintf(buffer, sizeof(buffer), "Hello #%d", ++i);
-                                curr_led = 2;
-                                ledSet(curr_led, true);
+                                ledChangeColor(2);
                                 uMqttClientPublish(pContext, topic, buffer,
                                                    strlen(buffer),
                                                    U_MQTT_QOS_EXACTLY_ONCE,
                                                    false);
-                                curr_led = 1;
-                                ledSet(curr_led, true);
+                                ledChangeColor(1);
                             }
                             uPortTaskBlock(1000);
                         }
@@ -151,7 +154,7 @@ void main()
             } else {
                 printf("* Failed to create mqtt instance !\n ");
             }
-
+            ledSet(curr_led, false);
             printf("Closing down the network...\n");
             uNetworkInterfaceDown(deviceHandle, gNetworkType);
         } else {
