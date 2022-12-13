@@ -43,6 +43,7 @@ static const uNetworkCfgCell_t gNetworkCfg = {
 static const uNetworkType_t gNetworkType = U_NETWORK_TYPE_CELL;
 
 bool done;
+bool scanning;
 uDeviceCfg_t gDeviceCfg;
 int curr_led = 0;
 
@@ -50,6 +51,7 @@ int curr_led = 0;
 char topic[32]; 
 char buffer[25];
 uMqttClientContext_t *pContext;
+uDeviceHandle_t deviceHandle;
 
 // Function to quickly handling the change of led color
 void ledChangeColor(int newColorId){
@@ -70,10 +72,42 @@ void button_pressed(int buttonNo, uint32_t holdTime)
         }
         else{
             printf("Button %d up. Hold time: %u ms\n", buttonNo, holdTime);
-            sendMqttMessage("Hello from the button");
+            doNetworkScan(deviceHandle);
+            sendMqttMessage("<payload_in_here>");
         }
 
     }
+}
+
+void doNetworkScan(uDeviceHandle_t cellHandle){
+    scanning = true;
+    int32_t y = 0;
+    char internalBuffer[64];
+    char mccMnc[U_CELL_NET_MCC_MNC_LENGTH_BYTES];
+
+    memset(internalBuffer, 0, sizeof(internalBuffer));
+    memset(mccMnc, 0, sizeof(mccMnc));
+    for (size_t x = 5; (x > 0) && (y <= 0); x--) {
+        printf("Scanning for networks...\n");
+        for (int32_t z = uCellNetScanGetFirst(cellHandle, internalBuffer,
+                                                sizeof(internalBuffer), mccMnc, NULL,
+                                                NULL);
+                z >= 0;
+                z = uCellNetScanGetNext(cellHandle, internalBuffer, sizeof(internalBuffer), mccMnc, NULL)) {
+
+            y++;
+            printf("found \"%s\", MCC/MNC %s.\n", internalBuffer, mccMnc);
+            memset(internalBuffer, 0, sizeof(internalBuffer));
+            memset(mccMnc, 0, sizeof(mccMnc));
+        }
+        if (y == 0) {
+        // Give us something to search for in the log
+        printf("*** WARNING *** RETRY SCAN.");
+        uPortTaskBlock(5000);
+        }
+    }
+    printf("%d network(s) found in total.\n", y);
+    scanning = false;
 }
 
 // Function to send message
@@ -106,7 +140,6 @@ void main()
     
     // And the U-blox module
     int32_t errorCode;
-    uDeviceHandle_t deviceHandle;
     uDeviceGetDefaults(gDeviceType, &gDeviceCfg);
     printf("\nInitiating the module...\n");
     errorCode = uDeviceOpen(&gDeviceCfg, &deviceHandle);
@@ -141,9 +174,15 @@ void main()
                         printf("mosquitto_sub -h %s -t %s -v\n", BROKER_NAME, topic);
                         printf("To send mqtt messages to this device use:\n");
                         printf("mosquitto_pub -h %s -t %s -m message\n", BROKER_NAME, topic);
-                        printf("Send message \"exit\" to disconnect\n");
                         done = false;
-                        while (!done) {       
+                        scanning = false;
+                        while (!done) {
+
+                            while (scanning){
+                                // do nothing but stop the thread
+                                // TODO check if this requires additional handling
+                                uPortTaskBlock(100);
+                            }
 
                             uPortTaskBlock(1000);
                         }
