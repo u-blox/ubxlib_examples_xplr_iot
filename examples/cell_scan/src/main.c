@@ -42,9 +42,14 @@ static const uNetworkCfgCell_t gNetworkCfg = {
 };
 static const uNetworkType_t gNetworkType = U_NETWORK_TYPE_CELL;
 
-
+bool done;
 uDeviceCfg_t gDeviceCfg;
 int curr_led = 0;
+
+// TODO check if this memory allocation is done correctly
+char topic[32]; 
+char buffer[25];
+uMqttClientContext_t *pContext;
 
 // Function to quickly handling the change of led color
 void ledChangeColor(int newColorId){
@@ -59,16 +64,27 @@ void button_pressed(int buttonNo, uint32_t holdTime)
     if (!holdTime) {
         // while pressed DO nothing
     } else {
-        printf("Button %d up. Hold time: %u ms\n", buttonNo, holdTime);
-        // do the scan in here
+        if (buttonNo == 1){
+            // Turn the device off
+            done = true;
+        }
+        else{
+            printf("Button %d up. Hold time: %u ms\n", buttonNo, holdTime);
+            sendMqttMessage("Hello from the button");
+        }
+
     }
 }
 
-// Callback for unread message indications.
-static void messageIndicationCallback(int32_t numUnread, void *pParam)
-{
-    bool *pMessagesAvailable = (bool *)pParam;
-    *pMessagesAvailable = true;
+// Function to send message
+void sendMqttMessage(char* message){
+        snprintf(buffer, sizeof(buffer), message);
+        ledChangeColor(2);
+        uMqttClientPublish(pContext, topic, buffer,
+                    strlen(buffer),
+                    U_MQTT_QOS_EXACTLY_ONCE,
+                    false);
+        ledChangeColor(1);
 }
 
 void main()
@@ -100,20 +116,16 @@ void main()
         errorCode = uNetworkInterfaceUp(deviceHandle, gNetworkType, &gNetworkCfg);
         if (errorCode == 0) {
             ledSet(curr_led, true);
-            uMqttClientContext_t *pContext = pUMqttClientOpen(deviceHandle, NULL);
+            pContext = pUMqttClientOpen(deviceHandle, NULL);
             if (pContext != NULL) {
                 uMqttClientConnection_t connection = U_MQTT_CLIENT_CONNECTION_DEFAULT;
-                volatile bool messagesAvailable = false;
-                char topic[32];
-
+                
                 connection.pBrokerNameStr = BROKER_NAME;
                 connection.pUserNameStr = ACCOUNT_NAME;
                 connection.pPasswordStr = ACCOUNT_PASSWORD;
                 if (uMqttClientConnect(pContext, &connection) == 0) {
                     ledChangeColor(1);
-                    uMqttClientSetMessageCallback(pContext,
-                                                  messageIndicationCallback,
-                                                  (void *)&messagesAvailable);
+
                     // Get a unique topic name for this test
                     uSecurityGetSerialNumber(deviceHandle, topic);
                     if (topic[0] == '"') {
@@ -130,33 +142,9 @@ void main()
                         printf("To send mqtt messages to this device use:\n");
                         printf("mosquitto_pub -h %s -t %s -m message\n", BROKER_NAME, topic);
                         printf("Send message \"exit\" to disconnect\n");
-                        bool done = false;
-                        int i = 0;
-                        while (!done && i < 3) {
-                            char buffer[25];
-                            if (messagesAvailable) {
-                                char buffer[25];
-                                while (uMqttClientGetUnread(pContext) > 0) {
-                                    size_t cnt = sizeof(buffer) - 1;
-                                    if (uMqttClientMessageRead(pContext, topic,
-                                                               sizeof(topic),
-                                                               buffer, &cnt,
-                                                               NULL) == 0) {
-                                        buffer[cnt] = 0;
-                                        printf("Received message: %s\n", buffer);
-                                        done = strstr(buffer, "exit");
-                                    }
-                                }
-                                messagesAvailable = false;
-                            } else {
-                                snprintf(buffer, sizeof(buffer), "Hello #%d", ++i);
-                                ledChangeColor(2);
-                                uMqttClientPublish(pContext, topic, buffer,
-                                                   strlen(buffer),
-                                                   U_MQTT_QOS_EXACTLY_ONCE,
-                                                   false);
-                                ledChangeColor(1);
-                            }
+                        done = false;
+                        while (!done) {       
+
                             uPortTaskBlock(1000);
                         }
                     } else {
