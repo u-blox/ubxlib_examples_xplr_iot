@@ -28,7 +28,9 @@
 
 #include "leds.h"
 
-#define BROKER_NAME "ubxlib.it-sgn.u-blox.com"
+#define BROKER_NAME "xxx"
+#define ACCOUNT_NAME "xxx"
+#define ACCOUNT_PASSWORD "xxx"
 
 // configuring the cellular module to be used 
 static uDeviceType_t gDeviceType = U_DEVICE_TYPE_CELL;
@@ -83,6 +85,8 @@ void main()
                 char topic[32];
 
                 connection.pBrokerNameStr = BROKER_NAME;
+                connection.pUserNameStr = ACCOUNT_NAME;
+                connection.pPasswordStr = ACCOUNT_PASSWORD;
                 if (uMqttClientConnect(pContext, &connection) == 0) {
                     curr_led = 1;
                     ledSet(curr_led, true);
