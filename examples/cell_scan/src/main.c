@@ -27,6 +27,7 @@
 #include "ubxlib.h"
 
 #include "leds.h"
+#include "buttons.h"
 
 #define BROKER_NAME "xxx"
 #define ACCOUNT_NAME "xxx"
@@ -45,10 +46,22 @@ static const uNetworkType_t gNetworkType = U_NETWORK_TYPE_CELL;
 uDeviceCfg_t gDeviceCfg;
 int curr_led = 0;
 
-void ledChangecolor(int newColorId){
+// Function to quickly handling the change of led color
+void ledChangeColor(int newColorId){
     ledSet(curr_led, false);
     curr_led = newColorId;
     ledSet(curr_led, true);
+}
+
+// Function to handle the press of buttons
+void button_pressed(int buttonNo, uint32_t holdTime)
+{
+    if (!holdTime) {
+        // while pressed DO nothing
+    } else {
+        printf("Button %d up. Hold time: %u ms\n", buttonNo, holdTime);
+        // do the scan in here
+    }
 }
 
 // Callback for unread message indications.
@@ -66,12 +79,15 @@ void main()
     uPortInit();
     uDeviceInit();
 
+    // Init buttons 
+    if (!buttonsInit(button_pressed)) {
+        printf("* Failed to initiate buttons\n");
+    }
     // Init leds
     if (!ledsInit()) {
         printf("* Failed to initiate leds\n");
     }
     
-
     // And the U-blox module
     int32_t errorCode;
     uDeviceHandle_t deviceHandle;
