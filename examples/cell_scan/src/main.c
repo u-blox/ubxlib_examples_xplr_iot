@@ -26,6 +26,8 @@
 
 #include "ubxlib.h"
 
+#include "leds.h"
+
 #define BROKER_NAME "ubxlib.it-sgn.u-blox.com"
 
 // configuring the cellular module to be used 
@@ -39,6 +41,7 @@ static const uNetworkType_t gNetworkType = U_NETWORK_TYPE_CELL;
 
 
 uDeviceCfg_t gDeviceCfg;
+int curr_led = 0;
 
 // Callback for unread message indications.
 static void messageIndicationCallback(int32_t numUnread, void *pParam)
@@ -50,20 +53,29 @@ static void messageIndicationCallback(int32_t numUnread, void *pParam)
 void main()
 {
     // Remove the line below if you want the log printouts from ubxlib
-    uPortLogOff();
+    //uPortLogOff();
     // Initiate ubxlib
     uPortInit();
     uDeviceInit();
+
+    // Init leds
+    if (!ledsInit()) {
+        printf("* Failed to initiate leds\n");
+    }
+    
+
     // And the U-blox module
     int32_t errorCode;
     uDeviceHandle_t deviceHandle;
     uDeviceGetDefaults(gDeviceType, &gDeviceCfg);
     printf("\nInitiating the module...\n");
     errorCode = uDeviceOpen(&gDeviceCfg, &deviceHandle);
+
     if (errorCode == 0) {
         printf("Bringing up the network...\n");
         errorCode = uNetworkInterfaceUp(deviceHandle, gNetworkType, &gNetworkCfg);
         if (errorCode == 0) {
+            ledSet(curr_led, true);
             uMqttClientContext_t *pContext = pUMqttClientOpen(deviceHandle, NULL);
             if (pContext != NULL) {
                 uMqttClientConnection_t connection = U_MQTT_CLIENT_CONNECTION_DEFAULT;
@@ -72,6 +84,8 @@ void main()
 
                 connection.pBrokerNameStr = BROKER_NAME;
                 if (uMqttClientConnect(pContext, &connection) == 0) {
+                    curr_led = 1;
+                    ledSet(curr_led, true);
                     uMqttClientSetMessageCallback(pContext,
                                                   messageIndicationCallback,
                                                   (void *)&messagesAvailable);
@@ -111,10 +125,14 @@ void main()
                                 messagesAvailable = false;
                             } else {
                                 snprintf(buffer, sizeof(buffer), "Hello #%d", ++i);
+                                curr_led = 2;
+                                ledSet(curr_led, true);
                                 uMqttClientPublish(pContext, topic, buffer,
                                                    strlen(buffer),
                                                    U_MQTT_QOS_EXACTLY_ONCE,
                                                    false);
+                                curr_led = 1;
+                                ledSet(curr_led, true);
                             }
                             uPortTaskBlock(1000);
                         }
