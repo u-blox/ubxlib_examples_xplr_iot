@@ -32,6 +32,7 @@
 #define BROKER_NAME "xxx"
 #define ACCOUNT_NAME "xxx"
 #define ACCOUNT_PASSWORD "xxx"
+#define LED_BLICKING_PERIOD 100
 
 // configuring the cellular module to be used 
 static uDeviceType_t gDeviceType = U_DEVICE_TYPE_CELL;
@@ -68,18 +69,19 @@ void button_pressed(int buttonNo, uint32_t holdTime)
     } else {
         if (buttonNo == 1){
             // Turn the device off
+            sendMqttMessage("Device turned OFF");
             done = true;
         }
         else{
             printf("Button %d up. Hold time: %u ms\n", buttonNo, holdTime);
             doNetworkScan(deviceHandle);
-            sendMqttMessage("<payload_in_here>");
         }
 
     }
 }
 
 void doNetworkScan(uDeviceHandle_t cellHandle){
+    ledBlink(curr_led, LED_BLICKING_PERIOD, LED_BLICKING_PERIOD);
     scanning = true;
     int32_t y = 0;
     char internalBuffer[64];
@@ -87,26 +89,29 @@ void doNetworkScan(uDeviceHandle_t cellHandle){
 
     memset(internalBuffer, 0, sizeof(internalBuffer));
     memset(mccMnc, 0, sizeof(mccMnc));
-    for (size_t x = 5; (x > 0) && (y <= 0); x--) {
-        printf("Scanning for networks...\n");
-        for (int32_t z = uCellNetScanGetFirst(cellHandle, internalBuffer,
-                                                sizeof(internalBuffer), mccMnc, NULL,
-                                                NULL);
-                z >= 0;
-                z = uCellNetScanGetNext(cellHandle, internalBuffer, sizeof(internalBuffer), mccMnc, NULL)) {
 
-            y++;
-            printf("found \"%s\", MCC/MNC %s.\n", internalBuffer, mccMnc);
-            memset(internalBuffer, 0, sizeof(internalBuffer));
-            memset(mccMnc, 0, sizeof(mccMnc));
-        }
-        if (y == 0) {
-        // Give us something to search for in the log
-        printf("*** WARNING *** RETRY SCAN.");
-        uPortTaskBlock(5000);
-        }
+    printf("Scanning for networks...\n");
+    for (int32_t z = uCellNetScanGetFirst(cellHandle, internalBuffer,
+                                            sizeof(internalBuffer), mccMnc, NULL,
+                                            NULL);
+            z >= 0;
+            z = uCellNetScanGetNext(cellHandle, internalBuffer, sizeof(internalBuffer), mccMnc, NULL)) {
+
+        y++;
+        printf("found \"%s\", MCC/MNC %s.\n", internalBuffer, mccMnc);
+        sendMqttMessage("found \"%s\", MCC/MNC %s.\n", internalBuffer, mccMnc);
+        memset(internalBuffer, 0, sizeof(internalBuffer));
+        memset(mccMnc, 0, sizeof(mccMnc));
     }
+    if (y == 0) {
+    printf("*** WARNING *** RETRY SCAN.");
+    sendMqttMessage("*** WARNING *** RETRY SCAN.");
+    }
+
     printf("%d network(s) found in total.\n", y);
+    sendMqttMessage("%d network(s) found in total.\n", y);
+    ledBlink(curr_led, 0, 0);
+    ledSet(curr_led, true);
     scanning = false;
 }
 
