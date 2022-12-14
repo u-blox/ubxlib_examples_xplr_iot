@@ -50,7 +50,7 @@ int curr_led = 0;
 
 // TODO check if this memory allocation is done correctly
 char topic[32]; 
-char buffer[25];
+char buffer[100];
 uMqttClientContext_t *pContext;
 uDeviceHandle_t deviceHandle;
 
@@ -85,6 +85,7 @@ void doNetworkScan(uDeviceHandle_t cellHandle){
     scanning = true;
     int32_t y = 0;
     char internalBuffer[64];
+    char payload[200];
     char mccMnc[U_CELL_NET_MCC_MNC_LENGTH_BYTES];
 
     memset(internalBuffer, 0, sizeof(internalBuffer));
@@ -98,18 +99,21 @@ void doNetworkScan(uDeviceHandle_t cellHandle){
             z = uCellNetScanGetNext(cellHandle, internalBuffer, sizeof(internalBuffer), mccMnc, NULL)) {
 
         y++;
-        printf("found \"%s\", MCC/MNC %s.\n", internalBuffer, mccMnc);
-        sendMqttMessage("found \"%s\", MCC/MNC %s.\n", internalBuffer, mccMnc);
+        snprintf(payload, sizeof(payload), "found \"%s\", MCC/MNC %s.\n", internalBuffer, mccMnc);
+        printf(payload);
+        sendMqttMessage(payload);
         memset(internalBuffer, 0, sizeof(internalBuffer));
         memset(mccMnc, 0, sizeof(mccMnc));
     }
     if (y == 0) {
-    printf("*** WARNING *** RETRY SCAN.");
-    sendMqttMessage("*** WARNING *** RETRY SCAN.");
+    snprintf(payload, sizeof(payload), "*** WARNING *** RETRY SCAN.");
+    printf(payload);
+    sendMqttMessage(payload);
     }
 
-    printf("%d network(s) found in total.\n", y);
-    sendMqttMessage("%d network(s) found in total.\n", y);
+    snprintf(payload, sizeof(payload), "%d network(s) found in total.\n", y);
+    printf(payload);
+    sendMqttMessage(payload);
     ledBlink(curr_led, 0, 0);
     ledSet(curr_led, true);
     scanning = false;
