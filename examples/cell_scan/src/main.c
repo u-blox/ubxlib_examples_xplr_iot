@@ -106,15 +106,15 @@ void doNetworkScan(uDeviceHandle_t cellHandle){
         memset(mccMnc, 0, sizeof(mccMnc));
     }
     if (y == 0) {
-    snprintf(payload, sizeof(payload), "*** WARNING *** RETRY SCAN.");
-    printf(payload);
-    sendMqttMessage(payload);
+        snprintf(payload, sizeof(payload), "*** WARNING *** RETRY SCAN.");
+        printf(payload);
+        sendMqttMessage(payload);
     }
 
     snprintf(payload, sizeof(payload), "%d network(s) found in total.\n", y);
     printf(payload);
-    sendMqttMessage(payload);
     ledBlink(curr_led, 0, 0);
+    sendMqttMessage(payload);
     ledSet(curr_led, true);
     scanning = false;
 }
@@ -186,6 +186,7 @@ void main()
                         done = false;
                         scanning = false;
                         while (!done) {
+                            // TODO collect cellular info
 
                             while (scanning){
                                 // do nothing but stop the thread
