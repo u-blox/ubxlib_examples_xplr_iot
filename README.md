@@ -1,7 +1,6 @@
 # Learning by examples
 
-This repo is intended to be a starting point on learning how to use the u-blox open source library [ubxlib](https://github.com/u-blox/ubxlib). The intended target system here is the [XPLR-IOT-1](https://www.u-blox.com/en/product/XPLR-IOT-1) device but most of the examples are also applicable to
-any u-blox module or EVK supported by ubxlib.
+This repo is dedicated to the XPLR-IoT-1 application framework which uses the u-blox open source library [ubxlib](https://github.com/u-blox/ubxlib) and is based off the XPLR-IoT-1 [ubxlib_examples_xplr_iot](https://github.com/u-blox/ubxlib_examples_xplr_iot) repository. The intended target system here is the [XPLR-IOT-1](https://www.u-blox.com/en/product/XPLR-IOT-1) device but most of the examples are also applicable to any u-blox module or EVK supported by ubxlib.
 
 ![ubxlib](readme_images/ubxlib-logo.png)
 ![XPLR_IOT-1](readme_images/XPLR-IOT-1.png)
@@ -44,7 +43,7 @@ The actual flash process is different if you have a debuger unit or are just usi
 
 Once you have everything installed and have connected your XPLR-IOT-1, you can start exploring the functionality of this repository.
 
-Begin by starting a command window. Then change working directory to where the repository was cloned. If you have used the installation script this will be in a directory underneath your home directory named xplriot1\ubxlib_examples_xplr_iot.
+Begin by starting a command window. Then change working directory to where the repository was cloned. If you have used the installation script this will be in a directory underneath your home directory named xplriot1\XPLR-IoT-1-ApplicationFramework.
 
 Please note that if you have installed the nRFConnect SDK via the "Toolchain Manager" desktop app you may have to start the command prompt via the corresponding entry in the dropdown list. This is the case if Python is not available in your standard path.
 
@@ -62,10 +61,7 @@ This will execute a complete build of the simple blink example and then start Vi
 
 Once Visual Studio Code has started you will find the "main.c" source code in a window.
 
-From within Visual Studio Code you can then build, rebuild, flash and run the examples. This is done via selecting the menus *Terminal -> Run Build Task* or by pressing the shortcut *ctrl-shift-b*. Choose *Build and run "blink"* to flash and start the blink example and the red led of your XPLR-IOT-1 should start blinking.
-
-
-You can then select any of the other examples by choosing *Select Example* in the Build Task menu as above. After that you can select *Build and run* again.
+From within Visual Studio Code you can then build, rebuild, flash and run the Application. This is done via selecting the menus *Terminal -> Run Build Task* or by pressing the shortcut *ctrl-shift-b*. 
 
 If you have a debug unit you can then also start a debugging session by first selecting the *Run and debug* icon in the left side pane.
 
@@ -86,15 +82,6 @@ If you are used to using the nRFConnect Visual Studio Code extension and prefer 
 In this case just open Visual Studio Code and then select *Add an existing application* in the nRF Connect extension. Browse to one of the example directory and choose open. Then do a *Add build configuration* in the normal way using the *nrf5340dk_nrf5340_cpuapp* as board. After that you can use the different operations available from the nRF Connect extension for building and debugging etc. You find all the used overlay and configuration files in the *config* directory of this repo. Please note that builds created this way will not use the bootloader.
 
 
-# Creating your own examples
-
-There are three ways you can experiment and create new example applications.
-
-* Edit the existing examples and rebuild.
-* Copy one existing example to the *playground* directory and edit and build from there. Everything added here will be excluded from git operations.
-* Create a directory outside of this repo and add a corresponding directory structure and source files there. If you then set the application directory as you default and start the *do* command from there it will pick up your example application instead of the ones in the repo.
-
-
 # Advanced usage
 
 All the operations performed in this repo are controlled by one central command named *do*. This command is executed as described above in a command window with the default directory set to the root of the repo.
@@ -110,8 +97,6 @@ Below is the help information for the command as shown when issuing "do --help".
 
     optional arguments:
     -h, --help            show this help message and exit
-    -e EXAMPLE, --example EXAMPLE
-                            Name of the example
     -p, --pristine        Pristine build (rebuild)
     --no-bootloader       Don't use the bootloader
     --when-changed        Only flash when build was triggered
@@ -138,12 +123,6 @@ The most typical operations are:
 These operations can also be started from within Visual Studio Code as described above.
 
 There are some options for the operations which can be specified. These can be temporary for the actual command or be saved as new defaults. In the latter case the operation "save" is used.
-
-The --example option is used to specify which example to build. If not specified the example used in latest previous run will be used. See the directory structure underneath the examples subdirectory for the names available. Example:
-
-    do build -e socket
-
-There will be a automatic search for examples among the directories so if you add your own that will be included as well in the list of choosables.
 
 ### Directory specification
 
@@ -202,3 +181,23 @@ Please note that this command will only work for examples that has defined CONFI
 
     do flash_net -e ibeacon
 
+
+
+## Disclaimer
+Copyright &copy; u-blox 
+
+u-blox reserves all rights in this deliverable (documentation, software, etc.,
+hereafter “Deliverable”). 
+
+u-blox grants you the right to use, copy, modify and distribute the
+Deliverable provided hereunder for any purpose without fee.
+
+THIS DELIVERABLE IS BEING PROVIDED "AS IS", WITHOUT ANY EXPRESS OR IMPLIED
+WARRANTY. IN PARTICULAR, NEITHER THE AUTHOR NOR U-BLOX MAKES ANY
+REPRESENTATION OR WARRANTY OF ANY KIND CONCERNING THE MERCHANTABILITY OF THIS
+DELIVERABLE OR ITS FITNESS FOR ANY PARTICULAR PURPOSE.
+
+In case you provide us a feedback or make a contribution in the form of a
+further development of the Deliverable (“Contribution”), u-blox will have the
+same rights as granted to you, namely to use, copy, modify and distribute the
+Contribution provided to us for any purpose without fee.
