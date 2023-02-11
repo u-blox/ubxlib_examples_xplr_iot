@@ -213,6 +213,7 @@ static int32_t readMessage(void)
     errorCode = uMqttClientMessageRead(pContext, topicString, MAX_TOPIC_SIZE, downlinkMessage, &msgSize, &QoS);
     if (errorCode < 0) {
         writeLog("Failed to read the MQTT Message: %d", errorCode);
+        messagesToRead = 0;
         return errorCode;
     } else {
         printf("Read MQTT Message on topic: %s [%d bytes]\n", topicString, msgSize);
@@ -241,7 +242,8 @@ static void readMessages(void)
     int32_t count = messagesToRead;
     for(int i=0; i<count; i++) {
         size_t msgSize = readMessage();
-        callbackTopic(msgSize);
+        if (msgSize >= 0)
+            callbackTopic(msgSize);
     }
 }
 
@@ -386,8 +388,13 @@ int32_t registerTopicCallBack(const char *topicName, uMqttQos_t maxQoS, void (*c
         return U_ERROR_COMMON_NO_MEMORY;
     }
 
+    if (pContext == NULL || !uMqttClientIsConnected(pContext)) {
+        writeLog("MQTT Client is not online, not registering topic callback");
+        return U_ERROR_COMMON_NOT_INITIALISED;
+    }
+
     int32_t errorCode = uMqttClientSubscribe(pContext, topicName, maxQoS);
-    if( errorCode < 0 ) {
+    if (errorCode < 0) {
         writeLog("Failed to subscribe to topic: %s", topicName);
         return errorCode;
     }

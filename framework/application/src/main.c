@@ -316,13 +316,6 @@ static bool initFramework(void)
     return true;
 }
 
-static void controlMessageHandler(const void *message, size_t msgSize) {
-    int32_t taskId = *(int32_t *) message;
-
-    printf("Received control message\n");
-    sendAppTaskMessage(taskId, message, msgSize);
-}
-
 /// @brief Sends a task a message via its event queue
 /// @param taskId The TaskId (based on the taskTypeId_t)
 /// @param message pointer to the message to send
@@ -341,6 +334,30 @@ int32_t sendAppTaskMessage(int32_t taskId, const void *pMessage, size_t msgSize)
     }
 
     return errorCode;
+}
+
+static void controlMessageHandler(const void *message, size_t msgSize) {
+    printf("Received control message\n");
+}
+
+static void controlTopicSubscription(void *pParam)
+{
+    // wait until the MQTT Task is up and running
+    while(isTaskRunning(TASK_CONFIG(MQTT_TASK).handles.mutexHandle)) {
+        uPortTaskBlock(500);
+    }
+
+    char controlTopicName[50];
+    snprintf(controlTopicName, 50, "/%s/Control", gSerialNumber);
+
+    // the MQTT task is running, but we might not be connected yet so this can fail
+    // U_ERROR_COMMON_NOT_INITIALISED is the error if the MQTT client isn't connected yet.
+    int32_t errorCode = U_ERROR_COMMON_NOT_INITIALISED;
+    while(errorCode == U_ERROR_COMMON_NOT_INITIALISED) {
+        errorCode = registerTopicCallBack(controlTopicName, U_MQTT_QOS_AT_MOST_ONCE, &controlMessageHandler);
+        if(errorCode == U_ERROR_COMMON_NOT_INITIALISED)
+            uPortTaskBlock(5000);
+    }
 }
 
 /// @brief Main entry to the application.
@@ -378,15 +395,14 @@ void main(void)
     }
 
     /* ************************************************************************
-     * Start the application tasks (those already running won't be restarted)
+     * Start the application tasks (already running won't be restarted)
      * ************************************************************************ */
     if (runTasks(tasks, ARRAYSIZE(tasks)) != 0) {
         return finalise(ERROR);
     }
 
-    char controlTopicName[50];
-    snprintf(controlTopicName, 50, "/%s/Control", gSerialNumber);
-    registerTopicCallBack(controlTopicName, U_MQTT_QOS_AT_MOST_ONCE, &controlMessageHandler);
+    uPortTaskHandle_t handle;
+    uPortTaskCreate(controlTopicSubscription, NULL, 1024, NULL, 1, &handle);
 
     /* ************************************************************************
      * Application loop and finalisation on exit stage
