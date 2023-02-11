@@ -32,32 +32,31 @@
 #include "cellScanTask.h"
 #include "exampleTask.h"
 
+/* ----------------------------------------------------------------
+ * DEFINES
+ * -------------------------------------------------------------- */
+
+#define STARTUP_DELAY 250        // 250 * 20ms => 5 seconds
+#define LOG_FILENAME "log.csv"
+
+#define TASK_CONFIG(task) tasks[task].config
+#define IS_TASK_RUNNING(task) isTaskRunning(TASK_CONFIG(task).handles.mutexHandle)
+
+/* ----------------------------------------------------------------
+ * TYPE DEFINITIONS
+ * -------------------------------------------------------------- */
+
+typedef struct {
+    const char *topicName;
+    uMqttQos_t qos;
+    void (*callbackFunction)(char *, size_t);
+} topicCallback_t;
+
 typedef enum {
     NO_BUTTON=-1,
     BUTTON_1=0,
     BUTTON_2=1
 } buttonNumber_t;
-
-static bool buttonCommandEnabled = false;
-static buttonNumber_t pressedButton = NO_BUTTON;
-
-#define STARTUP_DELAY 250        // 250 * 20ms => 5 seconds
-#define LOG_FILENAME "log.csv"
-
-applicationStates_t gAppStatus = MANUAL;
-
-// serial number of the module
-char gSerialNumber[U_SECURITY_SERIAL_NUMBER_MAX_LENGTH_BYTES];
-
-// deviceHandle is not static as this is shared between other modules.
-uDeviceHandle_t gDeviceHandle;
-
-// This flag is set to true when the application should close tasks and log files.
-// This flag is set to true when Button #1 is pressed.
-bool gExitApp = false;
-
-static uDeviceType_t deviceType = U_DEVICE_TYPE_CELL;
-static uDeviceCfg_t deviceCfg;
 
 // enum of task types - make sure this is in the same
 // order as the taskRunner_t tasks initialiser below!
@@ -71,6 +70,32 @@ typedef enum {
     MAX_TASKS
 } taskTypeId_t;
 
+/* ----------------------------------------------------------------
+ * GLOBAL VARIABLES
+ * -------------------------------------------------------------- */
+
+applicationStates_t gAppStatus = MANUAL;
+
+// serial number of the module
+char gSerialNumber[U_SECURITY_SERIAL_NUMBER_MAX_LENGTH_BYTES];
+
+// deviceHandle is not static as this is shared between other modules.
+uDeviceHandle_t gDeviceHandle;
+
+// This flag is set to true when the application should close tasks and log files.
+// This flag is set to true when Button #1 is pressed.
+bool gExitApp = false;
+
+/* ----------------------------------------------------------------
+ * STATIC VARIABLES
+ * -------------------------------------------------------------- */
+
+static uDeviceType_t deviceType = U_DEVICE_TYPE_CELL;
+static uDeviceCfg_t deviceCfg;
+
+static bool buttonCommandEnabled = false;
+static buttonNumber_t pressedButton = NO_BUTTON;
+
 // These task runners define the application.
 // Here we specify what tasks are to run, and what configuration they are to use
 taskRunner_t tasks[] = {
@@ -82,8 +107,9 @@ taskRunner_t tasks[] = {
     {startExampleTask, stopExampleTask, {"Example", NULL, {NULL, NULL, 0}}}
 };
 
-#define TASK_CONFIG(task) tasks[task].config
-#define IS_TASK_RUNNING(task) isTaskRunning(TASK_CONFIG(task).handles.mutexHandle)
+/* ----------------------------------------------------------------
+ * STATIC FUNCTIONS
+ * -------------------------------------------------------------- */
 
 /// @brief Handler for the buttons. On boot, Button 1: Display log, 2: Delete log.
 static void button_pressed(int buttonNo, uint32_t holdTime)
@@ -316,6 +342,36 @@ static bool initFramework(void)
     return true;
 }
 
+static void subscribeToTopic(void *pParam)
+{
+    topicCallback_t *topicCallback = (topicCallback_t *)pParam;
+
+    // wait until the MQTT Task is up and running
+    while(!isTaskRunning(TASK_CONFIG(MQTT_TASK).handles.mutexHandle)) {
+        uPortTaskBlock(500);
+    }
+
+    char topicName[50];
+    snprintf(topicName, 50, "/%s/%s", gSerialNumber, topicCallback->topicName);
+
+    // the MQTT task is running, but we might not be connected yet so this can fail
+    // U_ERROR_COMMON_NOT_INITIALISED is the error if the MQTT client isn't connected yet.
+    int32_t errorCode = U_ERROR_COMMON_NOT_INITIALISED;
+    while(errorCode == U_ERROR_COMMON_NOT_INITIALISED) {
+        errorCode = registerTopicCallBack(topicCallback->topicName, topicCallback->qos, topicCallback->callbackFunction);
+        if(errorCode == U_ERROR_COMMON_NOT_INITIALISED)
+            uPortTaskBlock(5000);
+    }
+
+    if (errorCode != 0) {
+        writeLog("Subscribing a callback to topic %s failed with erorr code %d", topicCallback->topicName, errorCode);
+    }
+}
+
+/* ----------------------------------------------------------------
+ * PUBLIC FUNCTIONS - see common.h
+ * -------------------------------------------------------------- */
+
 /// @brief Sends a task a message via its event queue
 /// @param taskId The TaskId (based on the taskTypeId_t)
 /// @param message pointer to the message to send
@@ -336,28 +392,30 @@ int32_t sendAppTaskMessage(int32_t taskId, const void *pMessage, size_t msgSize)
     return errorCode;
 }
 
-static void controlMessageHandler(const void *message, size_t msgSize) {
-    printf("Received control message\n");
+/// @brief Subscribes a callback function to a topic, waiting for the MQTT task to be online
+/// @param taskTopicName The topic name to subscribe to. Appends the serial number
+/// @param qos The Quality of Service to use for the subscription
+/// @param callbackFunction The callback function
+void subscribeToTopicAsync(const char *taskTopicName, uMqttQos_t qos, void (*callbackFunction)(char *, size_t))
+{
+    uPortTaskHandle_t handle;
+
+    topicCallback_t topicCallbackInfo = {
+        .topicName = taskTopicName,
+        .qos = qos,
+        .callbackFunction = callbackFunction
+    };
+
+    int32_t errorCode = uPortTaskCreate(subscribeToTopic, NULL, 1024, (void *)&topicCallbackInfo, 1, &handle);
+    if (errorCode != 0) {
+        writeLog("Can't start topic subscription on %s", taskTopicName);
+    }
+
+    return errorCode;
 }
 
-static void controlTopicSubscription(void *pParam)
-{
-    // wait until the MQTT Task is up and running
-    while(isTaskRunning(TASK_CONFIG(MQTT_TASK).handles.mutexHandle)) {
-        uPortTaskBlock(500);
-    }
-
-    char controlTopicName[50];
-    snprintf(controlTopicName, 50, "/%s/Control", gSerialNumber);
-
-    // the MQTT task is running, but we might not be connected yet so this can fail
-    // U_ERROR_COMMON_NOT_INITIALISED is the error if the MQTT client isn't connected yet.
-    int32_t errorCode = U_ERROR_COMMON_NOT_INITIALISED;
-    while(errorCode == U_ERROR_COMMON_NOT_INITIALISED) {
-        errorCode = registerTopicCallBack(controlTopicName, U_MQTT_QOS_AT_MOST_ONCE, &controlMessageHandler);
-        if(errorCode == U_ERROR_COMMON_NOT_INITIALISED)
-            uPortTaskBlock(5000);
-    }
+static void controlMessageHandler(const void *message, size_t msgSize) {
+    printf("Received control message\n");
 }
 
 /// @brief Main entry to the application.
@@ -401,8 +459,7 @@ void main(void)
         return finalise(ERROR);
     }
 
-    uPortTaskHandle_t handle;
-    uPortTaskCreate(controlTopicSubscription, NULL, 1024, NULL, 1, &handle);
+    subscribeToTopicAsync("Control", U_MQTT_QOS_AT_MOST_ONCE, controlMessageHandler);
 
     /* ************************************************************************
      * Application loop and finalisation on exit stage
