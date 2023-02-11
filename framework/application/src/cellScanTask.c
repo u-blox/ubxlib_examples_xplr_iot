@@ -29,9 +29,12 @@
  * -------------------------------------------------------------- */
 #define NETWORK_SCAN_TOPIC "NetworkScan"
 
-#define CELL_SCAN_QUEUE_STACK_SIZE (3*1024)
+#define CELL_SCAN_TASK_STACK_SIZE (3*1024)
+#define CELL_SCAN_TASK_PRIORITY 5
+
+#define CELL_SCAN_QUEUE_STACK_SIZE (1*1024)
 #define CELL_SCAN_QUEUE_PRIORITY 5
-#define CELL_SCAN_QUEUE_SIZE 1
+#define CELL_SCAN_QUEUE_SIZE 2
 
 /* ----------------------------------------------------------------
  * COMMON TASK VARIABLES
@@ -63,7 +66,7 @@ static bool keepGoing(void *pParam)
     return kg;
 }
 
-static void doCellScan(const char *topicName)
+static void doCellScan(void *pTopicName)
 {
     int32_t found = 0;
     int32_t count = 0;
@@ -76,7 +79,7 @@ static void doCellScan(const char *topicName)
 
     // create the topic name
     char topic[100];
-    snprintf(topic, 100, "/%s/%s", topicName, NETWORK_SCAN_TOPIC);
+    snprintf(topic, 100, "/%s/%s", (const char *)pTopicName, NETWORK_SCAN_TOPIC);
     writeLog("Cell Scan Topic: %s", topic);
 
     writeLog("Scanning for networks...");
@@ -116,6 +119,20 @@ static void doCellScan(const char *topicName)
     U_PORT_MUTEX_UNLOCK(TASK_MUTEX);
 }
 
+void startCellScan(const char *pTopicName)
+{
+    int32_t errorCode = uPortTaskCreate(doCellScan,
+                NULL,
+                CELL_SCAN_TASK_STACK_SIZE,
+                (void *)pTopicName,
+                CELL_SCAN_TASK_PRIORITY,
+                &TASK_HANDLE);
+
+    if (errorCode < 0) {
+        writeLog("Failed to start cell scan task: %d", errorCode);
+    }
+}
+
 static void queueHandler(void *pParam, size_t paramLengthBytes)
 {
     cellScanMsg_t *qMsg = (cellScanMsg_t *) pParam;
@@ -123,7 +140,7 @@ static void queueHandler(void *pParam, size_t paramLengthBytes)
 
     switch(qMsg->msgType) {
         case START_CELL_SCAN:
-            doCellScan(qMsg->msg.topicName);
+            startCellScan(qMsg->msg.topicName);
             break;
 
         case STOP_CELL_SCAN:
@@ -206,7 +223,7 @@ int32_t startNetworkScan(const char *pSerialNumber)
         msg.msg.topicName = pSerialNumber;
     }
 
-    errorCode = uPortEventQueueSend(TASK_QUEUE, &msg, sizeof(cellScanMsg_t));
+    errorCode = uPortEventQueueSendIrq(TASK_QUEUE, &msg, sizeof(cellScanMsg_t));
     if (errorCode != 0) {
         writeLog("Failed to queue a network scan event: %d", errorCode);
     }

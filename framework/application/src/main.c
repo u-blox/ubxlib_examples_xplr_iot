@@ -162,7 +162,7 @@ static int32_t initDevice(void) {
     int32_t errorCode;
 
     // turn off the UBXLIB printf() logging
-    uPortLogOff();
+    //uPortLogOff();
 
     writeLog("Initiating the UBXLIB Device API...");
     errorCode = uDeviceInit();
@@ -316,6 +316,13 @@ static bool initFramework(void)
     return true;
 }
 
+static void controlMessageHandler(const void *message, size_t msgSize) {
+    int32_t taskId = *(int32_t *) message;
+
+    printf("Received control message\n");
+    sendAppTaskMessage(taskId, message, msgSize);
+}
+
 /// @brief Sends a task a message via its event queue
 /// @param taskId The TaskId (based on the taskTypeId_t)
 /// @param message pointer to the message to send
@@ -324,13 +331,13 @@ static bool initFramework(void)
 int32_t sendAppTaskMessage(int32_t taskId, const void *pMessage, size_t msgSize)
 {
     if (taskId < 0 || taskId >= MAX_TASKS) {
-        writeLog("Send App Task Message Error: Invalid Task Id %d", taskId);
+        writeLog("Send App Task [%d] Message Error: Invalid Task Id", taskId);
         return -1;
     }
 
-    int32_t errorCode = uPortEventQueueSend(TASK_CONFIG(taskId).handles.eventQueueHandle, pMessage, msgSize);
+    int32_t errorCode = uPortEventQueueSendIrq(TASK_CONFIG(taskId).handles.eventQueueHandle, pMessage, msgSize);
     if (errorCode < 0) {
-        writeLog("Send App Task Message Error: Can't send event queue message: %d", errorCode);
+        writeLog("Send App Task [%d] Message Error: Can't send event queue message: %d", taskId, errorCode);
     }
 
     return errorCode;
@@ -376,6 +383,10 @@ void main(void)
     if (runTasks(tasks, ARRAYSIZE(tasks)) != 0) {
         return finalise(ERROR);
     }
+
+    char controlTopicName[50];
+    snprintf(controlTopicName, 50, "/%s/Control", gSerialNumber);
+    registerTopicCallBack(controlTopicName, U_MQTT_QOS_AT_MOST_ONCE, &controlMessageHandler);
 
     /* ************************************************************************
      * Application loop and finalisation on exit stage

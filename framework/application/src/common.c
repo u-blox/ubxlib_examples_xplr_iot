@@ -55,7 +55,7 @@ bool isTaskRunning(const uPortMutexHandle_t mutex)
 char *uStrDup(const char *src)
 {
     size_t len = strlen(src) + 1;  // String plus '\0'
-    char *dst = malloc(len); // Allocate space
+    char *dst = pUPortMalloc(len); // Allocate space
     if(dst != NULL)
     {
         memcpy (dst, src, len); // Copy the block

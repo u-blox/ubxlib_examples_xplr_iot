@@ -32,6 +32,7 @@ void stopMQTTTask(void);
  * TASK FUNCTIONS
  * -------------------------------------------------------------- */
 int32_t sendMQTTMessage(const char *pTopicName, const char *pMessage, uMqttQos_t QoS, bool retain);
+int32_t registerTopicCallBack(const char *topicName, uMqttQos_t maxQoS, void (*callbackFunction)(char *, size_t));
 
 /* ----------------------------------------------------------------
  * QUEUE MESSAGE TYPE DEFINITIONS
