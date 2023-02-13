@@ -183,8 +183,6 @@ static void controlCallback(const char *message, size_t msgSize)
     commandParams_t cmd;
     getParams((char *)message, &cmd);
 
-    printf("Received %s command with %d params", cmd.command, cmd.count);
-
     if(strcmp(cmd.command, "MEASURE_NOW") == 0)
         queueMeasureNow();
 }
