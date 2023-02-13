@@ -94,8 +94,8 @@ rmdir /S /Q %DriverName%
 
 cd ..
 echo Getting the source code repositories...
-call git clone --recursive -q https://github.com/u-blox/ubxlib_examples_xplr_iot
-cd ubxlib_examples_xplr_iot
+call git clone --recursive -q https://github.com/u-blox/XPLR-IoT-1-ApplicationFramework
+cd XPLR-IoT-1-ApplicationFramework
 call python do -n %ENV_DIR%\ncs -t %ENV_DIR%\%GCCName% save
 rem Avoid owner protection problems as we have cloned as admin
 call :SilentCom "takeown /r /f %ROOT_DIR%\ubxlib_examples_xplr_iot"
