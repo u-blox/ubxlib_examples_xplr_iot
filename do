@@ -38,7 +38,7 @@ cwd = os.getcwd()
 top_dir = os.path.dirname(os.path.realpath(__file__))
 is_linux = 'linux' in sys.platform
 exe_suffix = "" if is_linux else ".exe"
-examples_root = top_dir + "/framework/"
+examples_root = top_dir + "/examples/"
 args = ""
 
 
@@ -79,7 +79,7 @@ def get_exe_file(args, signed, use_jlink, net_cpu = False):
 #--------------------------------------------------------------------
 
 def build():
-    print(f"=== Building Application ===")
+    print(f"=== {args.example} ===")
     os.chdir(examples_root + args.example)
     com = f"west build --board nrf5340dk_nrf5340_cpuapp --build-dir {args.build_dir}"
     if args.pristine:
@@ -253,8 +253,8 @@ def vscode_files():
                     defines += re.sub("-D", "        \"", d).replace("\\\\", "") + "\",\n"
                 defines = re.sub(r",\n$", "", defines)
             elif 'INCLUDES = ' in line:
-                for i in re.findall(r" -I\S+", line):
-                    includes += re.sub(" -I", "        \"", i) + "\",\n"
+                for i in re.findall(r"-I\S+", line):
+                    includes += re.sub("-I", "        \"", i) + "\",\n"
                 includes = re.sub(r",\n$", "", includes)
                 break
     with open(templ_dir + "/c_cpp_properties_tmpl.json", "r") as f:
@@ -273,6 +273,12 @@ def vscode():
     os.chdir(cwd)
     vscode_files()
     exec_command(f"code . -g {examples_root}{args.example}/src/main.c")
+
+#--------------------------------------------------------------------
+
+def select():
+    vscode()
+    print(f"\n=== \"{args.example}\" is now the selected example for builds ===\n")
 
 #--------------------------------------------------------------------
 
@@ -366,7 +372,7 @@ def check_directories():
     elif not 'ubxlib_dir' in settings:
         settings['ubxlib_dir'] = os.path.realpath("ubxlib")
     if not exists(os.path.expandvars(settings['ubxlib_dir'])):
-        error_exit("Ubxlib directory not found: " + os.path.expandvars(settings['ubxlib_dir']))
+        error_exit("Ubxlib directory not found")
 
     # The build output root directory
     if args.build_dir != None:
@@ -386,6 +392,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("operation", nargs='+',
                         help="Operation to be performed: vscode, build, flash, run, monitor, debug",
+                        )
+    parser.add_argument("-e", "--example",
+                        help="Name of the example",
                         )
     parser.add_argument("-p", "--pristine",
                         help="Pristine build (rebuild)",
@@ -431,11 +440,17 @@ if __name__ == "__main__":
 
     read_settings()
     read_state()
-    args.example = "application"
+    if args.example == None:
+        if 'example' in state:
+            args.example = state['example']
+        else:
+            args.example = "blink"
+    if not args.example in examples:
+        error_exit(f"Invalid example \"{args.example}\"\nAvailable: {examples}")
     settings['no_bootloader'] = args.no_bootloader
     check_directories()
     set_env()
-    state['example'] = "application"
+    state['example'] = args.example
     save_state()
 
     # Execute specified operation
