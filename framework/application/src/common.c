@@ -31,13 +31,12 @@
 /// @return True if the mutex is locked
 bool isTaskRunning(const uPortMutexHandle_t mutex)
 {
-    if (mutex == NULL)
+    if (mutex == NULL) {
         return false;
+    }
 
     int32_t result = uPortMutexTryLock(mutex, 0);
-    if (result != 0) {
-        return true;
-    } else {
+    if (result == 0) {
         if (uPortMutexUnlock(mutex) != 0) {
             printf("Failed to release mutex from lock check!!!");
             // now you've done it. You've tested the mutex lock
@@ -46,7 +45,7 @@ bool isTaskRunning(const uPortMutexHandle_t mutex)
         }
     }
 
-    return false;
+    return true;
 }
 
 /// @brief Duplicates a string via malloc - remember to free()!
@@ -63,4 +62,20 @@ char *uStrDup(const char *src)
 
     // Return the new duplicate string
     return dst;
+}
+
+/// @brief Puts the command and param parts of a string message into a structure
+/// @param message The string to parse into Command: param1, param2 etc
+/// @param cmd The command structure to populate
+void getParams(char *message, commandParams_t *cmd)
+{
+    char *rest = message;
+
+    cmd->count = 0;
+    cmd->command = strtok_r(rest, " ,:", &rest);
+    for(int i=0; i<MAX_NUMBER_COMMAND_PARAMS; i++) {
+        cmd->params[i] = strtok_r(rest, " ,:", &rest);
+        if (cmd->params[i] != NULL)
+            cmd->count++;
+    }
 }

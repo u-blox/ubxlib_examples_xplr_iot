@@ -27,8 +27,8 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "stdbool.h"
-#include "stdint.h"
+#include <stdbool.h>
+#include <stdint.h>
 
 #include "ubxlib.h"
 #include "config.h"
@@ -47,6 +47,8 @@
 #define TASK_NAME taskConfig->name
 
 #define ARRAYSIZE(x) (sizeof(x) / sizeof((x)[0]))
+
+#define MAX_NUMBER_COMMAND_PARAMS 5
 
 /* ----------------------------------------------------------------
  * PUBLIC TYPE DEFINITIONS
@@ -90,6 +92,13 @@ typedef struct TaskRunner {
     taskConfig_t config;
 } taskRunner_t;
 
+typedef struct {
+    const char *command;
+    const char *params[MAX_NUMBER_COMMAND_PARAMS];
+    int32_t count;
+} commandParams_t;
+
+
 /* ----------------------------------------------------------------
  * EXTERNAL VARIABLES used in the application tasks
  * -------------------------------------------------------------- */
@@ -119,5 +128,11 @@ bool isTaskRunning(const uPortMutexHandle_t mutex);
 char *uStrDup(const char *src);
 
 int32_t sendAppTaskMessage(int32_t taskId, const void *pMessage, size_t msgSize);
+
+// subscribe a callback function to a topic
+void subscribeToTopicAsync(const char *taskTopicName, uMqttQos_t qos, void (*callbackFunction)(const char *, size_t));
+
+// Simple function to split message into command/params structure
+void getParams(char *message, commandParams_t *cmd);
 
 #endif

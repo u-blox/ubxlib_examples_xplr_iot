@@ -36,7 +36,6 @@
 #define SIGNAL_QUALITY_QUEUE_PRIORITY 5
 #define SIGNAL_QUALITY_QUEUE_SIZE 5
 
-
 /* ----------------------------------------------------------------
  * TASK COMMON VARIABLES
  * -------------------------------------------------------------- */
@@ -168,6 +167,28 @@ static int32_t initMutex(taskConfig_t *config)
     return errorCode;
 }
 
+static void queueMeasureNow(void)
+{
+    signalQualityMsg_t msg;
+    msg.msgType = MEASURE_SIGNAL_QUALTY_NOW;
+
+    int32_t errorCode = uPortEventQueueSendIrq(TASK_QUEUE, &msg, sizeof(signalQualityMsgType_t));
+    if (errorCode != 0) {
+        writeLog("Failed sending Queue Message: %d", errorCode);
+    }
+}
+
+static void controlCallback(const char *message, size_t msgSize)
+{
+    commandParams_t cmd;
+    getParams((char *)message, &cmd);
+
+    printf("Received %s command with %d params", cmd.command, cmd.count);
+
+    if(strcmp(cmd.command, "MEASURE_NOW") == 0)
+        queueMeasureNow();
+}
+
 /* ----------------------------------------------------------------
  * PUBLIC FUNCTIONS
  * -------------------------------------------------------------- */
@@ -185,6 +206,8 @@ int32_t startSignalQualityTask(taskConfig_t *config)
     CHECK_SUCCESS(initTask, config);
     CHECK_SUCCESS(initQueue, config);
     CHECK_SUCCESS(initMutex, config);
+
+    subscribeToTopicAsync("SignalQualityControl", U_MQTT_QOS_AT_MOST_ONCE, controlCallback);
 
     return result;
 }

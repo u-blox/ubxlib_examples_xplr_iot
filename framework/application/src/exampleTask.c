@@ -67,6 +67,7 @@ static void queueHandler(void *pParam, size_t paramLengthBytes)
     U_PORT_MUTEX_LOCK(TASK_MUTEX);
 
     // do the message handling...
+    params = NULL;
 
     U_PORT_MUTEX_UNLOCK(TASK_MUTEX);
 }

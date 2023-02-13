@@ -49,7 +49,7 @@
 typedef struct {
     const char *topicName;
     uMqttQos_t qos;
-    void (*callbackFunction)(char *, size_t);
+    void (*callbackFunction)(const char *, size_t);
 } topicCallback_t;
 
 typedef enum {
@@ -188,7 +188,7 @@ static int32_t initDevice(void) {
     int32_t errorCode;
 
     // turn off the UBXLIB printf() logging
-    //uPortLogOff();
+    uPortLogOff();
 
     writeLog("Initiating the UBXLIB Device API...");
     errorCode = uDeviceInit();
@@ -348,6 +348,7 @@ static void subscribeToTopic(void *pParam)
 
     // wait until the MQTT Task is up and running
     while(!isTaskRunning(TASK_CONFIG(MQTT_TASK).handles.mutexHandle)) {
+        printf("Waiting for MQTT Task to start...\n");
         uPortTaskBlock(500);
     }
 
@@ -358,13 +359,15 @@ static void subscribeToTopic(void *pParam)
     // U_ERROR_COMMON_NOT_INITIALISED is the error if the MQTT client isn't connected yet.
     int32_t errorCode = U_ERROR_COMMON_NOT_INITIALISED;
     while(errorCode == U_ERROR_COMMON_NOT_INITIALISED) {
-        errorCode = registerTopicCallBack(topicCallback->topicName, topicCallback->qos, topicCallback->callbackFunction);
-        if(errorCode == U_ERROR_COMMON_NOT_INITIALISED)
+        errorCode = registerTopicCallBack(topicName, topicCallback->qos, topicCallback->callbackFunction);
+        if(errorCode == U_ERROR_COMMON_NOT_INITIALISED) {
+            printf("MQTT not connected yet, waiting another 5 seconds...\n");
             uPortTaskBlock(5000);
+        }
     }
 
     if (errorCode != 0) {
-        writeLog("Subscribing a callback to topic %s failed with erorr code %d", topicCallback->topicName, errorCode);
+        writeLog("Subscribing a callback to topic %s failed with erorr code %d", topicName, errorCode);
     }
 }
 
@@ -396,7 +399,7 @@ int32_t sendAppTaskMessage(int32_t taskId, const void *pMessage, size_t msgSize)
 /// @param taskTopicName The topic name to subscribe to. Appends the serial number
 /// @param qos The Quality of Service to use for the subscription
 /// @param callbackFunction The callback function
-void subscribeToTopicAsync(const char *taskTopicName, uMqttQos_t qos, void (*callbackFunction)(char *, size_t))
+void subscribeToTopicAsync(const char *taskTopicName, uMqttQos_t qos, void (*callbackFunction)(const char *, size_t))
 {
     uPortTaskHandle_t handle;
 
@@ -406,15 +409,17 @@ void subscribeToTopicAsync(const char *taskTopicName, uMqttQos_t qos, void (*cal
         .callbackFunction = callbackFunction
     };
 
+    printf("Subscribing to topic %s, from a async thread\n", taskTopicName);
+
     int32_t errorCode = uPortTaskCreate(subscribeToTopic, NULL, 1024, (void *)&topicCallbackInfo, 1, &handle);
     if (errorCode != 0) {
-        writeLog("Can't start topic subscription on %s", taskTopicName);
+        writeLog("Can't start topic subscription on %s\n", taskTopicName);
     }
 
-    return errorCode;
+    printf("Finished sending off the subscription thread.\n");
 }
 
-static void controlMessageHandler(const void *message, size_t msgSize) {
+static void controlMessageHandler(const char *message, size_t msgSize) {
     printf("Received control message\n");
 }
 

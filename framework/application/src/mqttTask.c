@@ -53,7 +53,7 @@ static taskConfig_t *taskConfig;
  * -------------------------------------------------------------- */
 typedef struct CALLBACK_REGISTER {
     char *topicName;
-    void (*callbackFunction)(char *message, size_t count);
+    void (*callbackFunction)(const char *message, size_t count);
 } callback_register_t;
 
 /* ----------------------------------------------------------------
@@ -381,7 +381,7 @@ int32_t sendMQTTMessage(const char *pTopicName, const char *pMessage, uMqttQos_t
 /// @param topicName The topic of interest
 /// @param callbackFunction The callback functaion to call when we received a message
 /// @return 0 on success, negative on failure
-int32_t registerTopicCallBack(const char *topicName, uMqttQos_t maxQoS, void (*callbackFunction)(char *, size_t))
+int32_t registerTopicCallBack(const char *topicName, uMqttQos_t maxQoS, void (*callbackFunction)(const char *, size_t))
 {
     if (callbackCount == MAX_TOPIC_CALLBACKS) {
         writeLog("Maximum number of topic callbacks reached.");
