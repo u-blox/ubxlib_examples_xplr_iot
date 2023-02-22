@@ -20,7 +20,7 @@ If you already have the Nordic nRFConnect SDK installed and know how to use it, 
 
 On the other hand if this is your first encounter with the Nordic nrf53 chipset and possibly also with git, a complete installation script which includes everything needed for development is provided. In this case [goto this page](install/README.md) for more information about the installation process.
 
-You can of course also install everything yourself following the instructions at the [Nordic web site](https://www.nordicsemi.com/Products/Development-software/nrf-connect-sdk). The repository has been tested with nRF Connect versions 1.7.0 up to 2.1.0. However some of the examples do require at least version 1.9.0.
+You can of course also install everything yourself following the instructions at the [Nordic web site](https://www.nordicsemi.com/Products/Development-software/nrf-connect-sdk). The repository has been tested with nRF Connect versions 1.7.0 up to 2.2.0. However some of the examples do require at least version 1.9.0.
 
 It also works if you have your own tailored installation. You just have to specify where to find the nRFConnect environment parts. More about this below.
 
@@ -39,6 +39,8 @@ Please note that the usb cable should also be inserted if you want to see printo
 The actual flash process is different if you have a debuger unit or are just using the serial cable. In the first case everything is done automatically if the debug is connected to the XPLR-IOT-1. In the latter case manual interaction is needed. You must first turn off the XPLR-IOT-1 with its on/off button. Then press down button 1 on the top side of the unit and keep it pressed while turning on the device again. The unit is now in bootloader mode and the flashing process can begin. Flashing performed by this repository tools will prompt you for confirmation of that the unit is in bootloader mode before starting.
 
 **Also please note** that by flashing these examples you will overwrite the "Sensor Aggregation" firmware which is installed in a fresh XPLR-IOT-1. Should you later want to restore that firmware, [this page](https://github.com/u-blox/XPLR-IOT-1-software) will show you how.
+
+Some of the Bluetooth examples requires at least version 1.2 of ubxlib, to be released in March 2023.
 
 # Getting started
 
@@ -198,7 +200,7 @@ To flash the built network cpu firmware the following command must be used after
 
 This is only required to be done once.
 
-Please note that this command will only work for examples that has defined CONFIG_BT. The current examples doing that are: ibeacon, scanner and aoa_tag. In this case the command will be for ibeacon:
+Please note that this command will only work for examples that has defined CONFIG_BT. The current examples doing that are: ble_ibeacon_z, ble_scan_z and aoa_tag. In this case the command will be for ibeacon_z:
 
-    do flash_net -e ibeacon
+    do flash_net -e ble_ibeacon_z
 

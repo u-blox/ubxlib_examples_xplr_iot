@@ -25,7 +25,7 @@
  */
 
 #include <stdio.h>
-#include <zephyr.h>
+#include <kernel.h>
 
 #include <nfc_t2t_lib.h>
 #include <nfc/ndef/uri_msg.h>

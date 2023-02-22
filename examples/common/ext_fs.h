@@ -15,7 +15,7 @@
  */
 
 #include <fs/fs.h>
-#include <zephyr.h>
+#include <kernel.h>
 
 /**
  * Initiate little_fs on the external flash memory of the XPLR-IOT-1.

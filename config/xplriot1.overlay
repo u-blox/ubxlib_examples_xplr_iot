@@ -155,3 +155,7 @@ based on the Nordic nrf53dk board
 
 	};
 };
+
+&spi4 {
+	status = "disabled";
+};
