@@ -17,7 +17,7 @@
 /*
  *
  * A simple demo application showing how to set up
- * and use a GNSS module using ubxlib.
+ * and use a u-blox GNSS module using ubxlib.
  *
  */
 
@@ -34,6 +34,20 @@ uDeviceCfg_t gDeviceCfg;
 uNetworkCfgGnss_t gNetworkCfg = {
     .type = U_NETWORK_TYPE_GNSS
 };
+
+// Return longitude/latitude value as string
+static char *locStr(int32_t loc)
+{
+    static char str[25];
+    const char *sign = "";
+    if (loc < 0) {
+        loc = -loc;
+        sign = "-";
+    }
+    snprintf(str, sizeof(str), "%s%d.%07d",
+             sign, loc / 10000000, loc % 10000000);
+    return str;
+}
 
 void main()
 {
@@ -67,9 +81,9 @@ void main()
             printf("\nWaited: %lld s\n", (uPortGetTickTimeMs() - startTime) / 1000);
             if (errorCode == 0) {
                 ledSet(GREEN_LED, true);
-                printf("Position: https://maps.google.com/?q=%d.%07d,%d.%07d\n",
-                       location.latitudeX1e7 / 10000000, location.latitudeX1e7 % 10000000,
-                       location.longitudeX1e7 / 10000000, location.longitudeX1e7 % 10000000);
+                printf("Position: https://maps.google.com/?q=");
+                printf("%s,", locStr(location.latitudeX1e7));
+                printf("%s\n", locStr(location.longitudeX1e7));
                 printf("Radius: %d m\n", location.radiusMillimetres / 1000);
                 struct tm *t = gmtime(&location.timeUtc);
                 printf("UTC Time: %4d-%02d-%02d %02d:%02d:%02d\n",

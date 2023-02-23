@@ -41,3 +41,5 @@ file(REAL_PATH "${CMAKE_CURRENT_LIST_DIR}/common" APP_COMMON_DIR)
 file(GLOB APP_COMMONS "${APP_COMMON_DIR}/*.c")
 target_sources(app PRIVATE ${APP_COMMONS})
 target_include_directories(app PRIVATE ${APP_COMMON_DIR})
+
+zephyr_include_directories(${ZEPHYR_BASE}/include/zephyr)

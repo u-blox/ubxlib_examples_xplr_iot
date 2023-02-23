@@ -58,7 +58,7 @@ void main(void)
     } else {
         err = bt_le_scan_start(&scan_param, device_found);
         if (err) {
-            printf("* Failed to start advertising %d\n", err);
+            printf("* Failed to start scanning %d\n", err);
         } else {
             printf("iBeacon advertising started\n");
         }

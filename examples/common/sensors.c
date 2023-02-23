@@ -21,7 +21,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <zephyr.h>
+#include <kernel.h>
 
 const struct device *gpBme280Dev;
 const struct device *gpLis2dhDev;

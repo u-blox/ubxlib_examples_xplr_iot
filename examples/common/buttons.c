@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <zephyr.h>
+#include <kernel.h>
 #include <device.h>
 #include <drivers/gpio.h>
 

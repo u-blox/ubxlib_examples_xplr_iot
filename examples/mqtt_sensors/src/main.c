@@ -31,7 +31,7 @@
 #include "sensors.h"
 #include "ubxlib.h"
 
-#define BROKER_NAME "ubxlib.it-sgn.u-blox.com"
+#define BROKER_NAME "test.mosquitto.org"
 
 // Change the line below based on which type of module you want to use
 #if 1
