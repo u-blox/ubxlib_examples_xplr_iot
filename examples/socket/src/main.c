@@ -71,7 +71,7 @@ void main()
         if (errorCode == 0) {
             // Send to and read back data from an echo server using ubxlib sockets
             uSockAddress_t address;
-            uSockGetHostByName(deviceHandle, "ubxlib.it-sgn.u-blox.com",
+            uSockGetHostByName(deviceHandle, "ubxlib.redirectme.net",
                                &(address.ipAddress));
             address.port = 5055;
             int32_t sock = uSockCreate(deviceHandle,

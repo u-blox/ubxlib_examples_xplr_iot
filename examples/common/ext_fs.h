@@ -37,9 +37,9 @@ const char *extFsPath(const char *fileName);
 
 /**
  * Get the size of the free space on the file system in kB.
- * @return Actual free size.
+ * @return Actual free size or possible negative error code
  */
-unsigned long extFsFree();
+int32_t extFsFree();
 
 /**
  * Check if a file exists

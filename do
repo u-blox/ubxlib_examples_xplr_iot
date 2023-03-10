@@ -63,6 +63,8 @@ def check_jlink():
 #--------------------------------------------------------------------
 
 def find_uart0():
+    if 'uart_name' in settings:
+        return settings['uart_name']
     for port in list_ports.comports():
         if re.search("CP210.+Interface 0", str(port)):
             return port.device
@@ -420,6 +422,9 @@ if __name__ == "__main__":
     parser.add_argument("-u", "--ubxlib-dir",
                         help="Ubxlib directory"
                         )
+    parser.add_argument("--uart-name",
+                        help="Uart port name"
+                        )
     args = parser.parse_args()
 
     if not args.operation[0] in locals():
@@ -448,6 +453,8 @@ if __name__ == "__main__":
     if not args.example in examples:
         error_exit(f"Invalid example \"{args.example}\"\nAvailable: {examples}")
     settings['no_bootloader'] = args.no_bootloader
+    if args.uart_name != None:
+        settings['uart_name'] = args.uart_name
     check_directories()
     set_env()
     state['example'] = args.example

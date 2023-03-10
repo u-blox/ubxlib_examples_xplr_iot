@@ -24,6 +24,7 @@ set ROOT_DIR=%USERPROFILE%\xplriot1
 set ENV_DIR=%ROOT_DIR%\env
 set GIT_ENV_DIR=%ENV_DIR:\=/%
 set NCS_VERS=v2.1.0
+set PIP_COM=pip3 --disable-pip-version-check install -q
 
 echo Started at: %date% %time%
 
@@ -31,11 +32,12 @@ echo Installing packages...
 "%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -InputFormat None -ExecutionPolicy Bypass ^
    -Command "[System.Net.ServicePointManager]::SecurityProtocol = 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))" ^
    1>nul 2>%ERR_FILE% || (type %ERR_FILE% & exit /b 1)
-set PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin
+set PATH=%ALLUSERSPROFILE%\chocolatey\bin;%PATH%
 call :SilentCom "choco install -y --no-progress cmake --installargs 'ADD_CMAKE_TO_PATH=System'"
-call :SilentCom "choco install -y --no-progress ninja gperf python3 git dtc-msys2 wget unzip nrfjprog tartool ccache"
+call :SilentCom "choco install -y --no-progress ninja gperf python3 git dtc-msys2 wget curl unzip nrfjprog tartool ccache which"
 call refreshenv >nul
-pip3 install -q west
+echo Installing west...
+call :SilentCom "%PIP_COM% west"
 set TarFile=newtmgr.tar.gz
 curl -s https://archive.apache.org/dist/mynewt/apache-mynewt-1.4.1/apache-mynewt-newtmgr-bin-windows-1.4.1.tgz >%TarFile%
 call tar -O -xf %TarFile% "*newtmgr.exe" >%ALLUSERSPROFILE%\chocolatey\bin\newtmgr.exe
@@ -49,9 +51,9 @@ call :SilentCom "west update"
 call :SilentCom "west zephyr-export"
 
 echo Installing additional Python requirements...
-pip3 install -q -r zephyr/scripts/requirements.txt >nul 2>&1
-pip3 install -q -r nrf/scripts/requirements.txt >nul 2>&1
-pip3 install -q -r bootloader/mcuboot/scripts/requirements.txt >nul 2>&1
+%PIP_COM% -r zephyr/scripts/requirements.txt >nul 2>&1
+%PIP_COM% -r nrf/scripts/requirements.txt >nul 2>&1
+%PIP_COM% -r bootloader/mcuboot/scripts/requirements.txt >nul 2>&1
 
 echo Installing ARM compiler...
 cd ..
@@ -96,7 +98,9 @@ cd ..
 echo Getting the source code repositories...
 call git clone --recursive -q https://github.com/u-blox/ubxlib_examples_xplr_iot
 cd ubxlib_examples_xplr_iot
-call python do -n %ENV_DIR%\ncs -t %ENV_DIR%\%GCCName% save
+rem Make sure we use same python as pip3 (in case another installation exists)
+for /F %%p in ('which pip3') do call :PythonPath %%p
+call %_PYTHON_PATH%python do -n %ENV_DIR%\ncs -t %ENV_DIR%\%GCCName% save
 rem Avoid owner protection problems as we have cloned as admin
 call :SilentCom "takeown /r /f %ROOT_DIR%\ubxlib_examples_xplr_iot"
 call git config --global --add safe.directory %GIT_ENV_DIR%/ncs/zephyr
@@ -110,4 +114,8 @@ goto:eof
 
 :SilentCom
 %~1 1>nul 2>%ERR_FILE% || (type %ERR_FILE% & exit /b 1)
+exit /b 0
+
+:PythonPath
+set _PYTHON_PATH=%~dp1..\
 exit /b 0
