@@ -105,8 +105,4 @@ void main()
     } else {
         printf("* Failed to initiate the module: %d\n", errorCode);
     }
-
-    while (1) {
-        uPortTaskBlock(1000);
-    }
 }
