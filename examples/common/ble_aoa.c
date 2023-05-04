@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <stdio.h>
+
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/direction.h>
@@ -83,7 +85,7 @@ static bool set_adv_params(uint16_t min_ms, uint16_t max_ms)
     return bt_le_per_adv_set_param(m_ext_adv, &per_adv_param) == 0;
 }
 
-bool bleAoaInit()
+bool bleAoaInit(char *pBleId)
 {
     bool ok = bt_enable(NULL) == 0;
     if (ok) {
@@ -100,6 +102,12 @@ bool bleAoaInit()
             memcpy(id, addr.a.val, EDDYSTONE_INSTANCE_ID_LEN);
         }
         memcpy((uint8_t *)&m_adv_data[2].data[ADV_DATA_OFFSET_INSTANCE], id, EDDYSTONE_INSTANCE_ID_LEN);
+        if (pBleId) {
+            for (uint8_t i = 0; i < EDDYSTONE_INSTANCE_ID_LEN; i++) {
+                sprintf(pBleId, "%02X", id[i]);
+                pBleId += 2;
+            }
+        }
 
         ok = bt_le_ext_adv_create(&m_adv_param, NULL, &m_ext_adv) == 0;
         ok = ok && bt_le_ext_adv_set_data(m_ext_adv, m_adv_data, ARRAY_SIZE(m_adv_data), NULL, 0) == 0;

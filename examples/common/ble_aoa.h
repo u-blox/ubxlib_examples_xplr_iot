@@ -18,9 +18,11 @@
 #include <stdbool.h>
 
 /** Initiate BLE for angle of arrival advertisements
+ * @param pBleId String to receive the 12 character BLE id (mac).
+ *               Can be set to NULL.
  * @return       Success or failure.
  */
-bool bleAoaInit();
+bool bleAoaInit(char *pBleId);
 
 /** Start or stop angle of arrival advertisements
  * @param min_ms Minimum advertisement time in milliseconds.

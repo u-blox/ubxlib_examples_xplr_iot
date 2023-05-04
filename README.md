@@ -40,7 +40,7 @@ The actual flash process is different if you have a debuger unit or are just usi
 
 **Also please note** that by flashing these examples you will overwrite the "Sensor Aggregation" firmware which is installed in a fresh XPLR-IOT-1. Should you later want to restore that firmware, [this page](https://github.com/u-blox/XPLR-IOT-1-software) will show you how.
 
-Some of the Bluetooth examples requires at least version 1.2 of ubxlib, to be released in March 2023.
+The WiFi captive portal example requires ubxlib version 1.3 or later, to be released July 2023.
 
 # Getting started
 

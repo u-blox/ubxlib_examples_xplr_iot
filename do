@@ -232,7 +232,7 @@ def vscode_files():
     with open(templ_dir + "/launch_tmpl.json", "r") as f:
         launch = f.read()
     launch = re.sub("\$BUILD_DIR", Path(f"{settings['build_dir']}/{args.example}").as_posix(), launch)
-    launch = re.sub("\$EXE_FILE", os.path.basename(get_exe_file(args, not args.no_bootloader, has_jlink, False)), launch)
+    launch = re.sub("\$EXE_FILE", os.path.basename(get_exe_file(args, not args.no_bootloader, True, False)), launch)
     launch = re.sub("\$TC_DIR", gcc_bin_dir, launch)
     gdb_exe = sorted(Path(gcc_bin_dir).rglob(f"*gdb{exe_suffix}"))[0].as_posix()
     launch = re.sub("\$GDB_PATH", gdb_exe, launch)
