@@ -9,3 +9,4 @@ launch.json
 settings.json
 examples/playground/*
 !examples/playground/README.md
+ubxlib_examples_xplr_iot.code-workspace

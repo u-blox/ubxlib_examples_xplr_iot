@@ -71,8 +71,10 @@ void doConnect()
         ledBlink(GREEN_LED, 250, 250);
         errorCode = uNetworkInterfaceUp(gDeviceHandle, U_NETWORK_TYPE_WIFI, &networkCfg);
     }
-    if (errorCode != 0) {
-        printf("- Failed to bring up WiFi, starting captive portal.");
+    if (errorCode == 0) {
+        printf("Connected to WiFi\n");
+    } else {
+        printf("- Failed to bring up WiFi, starting captive portal.\n");
         printf("Use a phone or PC to connect to the WiFi access point\n");
         printf("with the name \"%s\".\n", PORTAL_NAME);
         ledBlink(BLUE_LED, 250, 250);
