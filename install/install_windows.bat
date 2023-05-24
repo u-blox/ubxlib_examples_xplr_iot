@@ -1,5 +1,5 @@
 @echo off
-rem Copyright 2022 u-blox
+rem Copyright 2022-2023 u-blox
 rem
 rem Licensed under the Apache License, Version 2.0 (the "License");
 rem you may not use this file except in compliance with the License.
@@ -28,14 +28,27 @@ set PIP_COM=pip3 --disable-pip-version-check install -q
 
 echo Started at: %date% %time%
 
-echo Installing packages...
+rem Avoid possible path length problem
+call :SilentCom "reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /f /v LongPathsEnabled /t REG_DWORD /d 1"
+
+cd /d "%USERPROFILE%"
+echo Installing tool packages...
 "%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -InputFormat None -ExecutionPolicy Bypass ^
    -Command "[System.Net.ServicePointManager]::SecurityProtocol = 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))" ^
    1>nul 2>%ERR_FILE% || (type %ERR_FILE% & exit /b 1)
 set PATH=%ALLUSERSPROFILE%\chocolatey\bin;%PATH%
 call :SilentCom "choco install -y --no-progress cmake --installargs 'ADD_CMAKE_TO_PATH=System'"
-call :SilentCom "choco install -y --no-progress ninja gperf python3 git dtc-msys2 wget curl unzip nrfjprog tartool ccache which"
+call :SilentCom "choco install -y --no-progress ninja gperf git.commandline dtc-msys2 wget curl unzip nrfjprog tartool ccache which"
 call refreshenv >nul
+call python --version 2>&1 | findstr 3. >NUL
+IF %ERRORLEVEL% EQU 0 goto west
+echo Installing Python...
+set PY_INST=py_inst.exe
+curl -s https://www.python.org/ftp/python/3.11.3/python-3.11.3-amd64.exe >%PY_INST%
+call %PY_INST% /quiet PrependPath=1 InstallAllUsers=0 Include_test=0 TargetDir=%ENV_DIR%\Python
+del %PY_INST%
+call refreshenv >nul
+:west
 echo Installing west...
 call :SilentCom "%PIP_COM% west"
 set TarFile=newtmgr.tar.gz
@@ -47,6 +60,8 @@ echo Installing nRF Connect SDK...
 mkdir %ENV_DIR%\ncs
 cd /d  %ENV_DIR%\ncs
 call :SilentCom "west init -m https://github.com/nrfconnect/sdk-nrf --mr %NCS_VERS%"
+rem Avoid possible owner protection problems as we will clone as admin
+call :SilentCom "takeown /r /f %ENV_DIR%\ncs"
 call :SilentCom "west update"
 call :SilentCom "west zephyr-export"
 
@@ -98,10 +113,7 @@ cd ..
 echo Getting the source code repositories...
 call git clone --recursive -q https://github.com/u-blox/ubxlib_examples_xplr_iot
 cd ubxlib_examples_xplr_iot
-rem Make sure we use same python as pip3 (in case another installation exists)
-for /F %%p in ('which pip3') do call :PythonPath %%p
-call %_PYTHON_PATH%python do -n %ENV_DIR%\ncs -t %ENV_DIR%\%GCCName% save
-rem Avoid owner protection problems as we have cloned as admin
+call python do -n %ENV_DIR%\ncs -t %ENV_DIR%\%GCCName% save
 call :SilentCom "takeown /r /f %ROOT_DIR%\ubxlib_examples_xplr_iot"
 call git config --global --add safe.directory %GIT_ENV_DIR%/ncs/zephyr
 
@@ -113,9 +125,6 @@ pause
 goto:eof
 
 :SilentCom
-%~1 1>nul 2>%ERR_FILE% || (type %ERR_FILE% & exit /b 1)
-exit /b 0
-
-:PythonPath
-set _PYTHON_PATH=%~dp1..\
+rem Execute a command without any printouts unless an error occurs
+%~1 1>nul 2>%ERR_FILE% || (type %ERR_FILE% & pause & exit 1)
 exit /b 0

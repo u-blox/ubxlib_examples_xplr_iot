@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2022 u-blox
+# Copyright 2022-2023 u-blox
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,13 +22,14 @@ import os
 import sys
 import subprocess
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from os.path import exists
 import argparse
 import json
 from time import time
 from serial.tools import list_ports, miniterm
 from pathlib import Path
+from glob import glob
 
 # Global variables
 settings = dict()
@@ -87,23 +88,28 @@ def build():
     if args.pristine:
         com += " --pristine"
     start = time()
-    if exec_command(com) == 0:
+    ret_val = 0
+    build_res = exec_command(com)
+    if build_res == 0:
+        if os.path.getmtime(get_exe_file(args, False, False, False)) > start:
+            ret_val = 1
         path = f"{args.build_dir}/zephyr/zephyr"
-        if not args.no_bootloader and os.path.getmtime(get_exe_file(args, False, False, False)) > start:
+        if not args.no_bootloader and ret_val == 1:
             mcuboot_dir = settings['ncs_dir'] + "/bootloader/mcuboot"
             for use_jlink in (False, True):
                 if exists(get_exe_file(args, False, use_jlink)):
-                    sign_com = (f"{sys.executable} {mcuboot_dir}/scripts/imgtool.py sign"
-                                f" --key {mcuboot_dir}/root-rsa-2048.pem"
+                    sign_com = (f"\"{sys.executable}\" \"{mcuboot_dir}/scripts/imgtool.py\" sign"
+                                f" --key \"{mcuboot_dir}/root-rsa-2048.pem\""
                                 " --header-size 0x200 --align 4 --version 0.0.0+0"
                                 " --pad-header --slot-size 0xe0000"
                                 f" {get_exe_file(args, False, use_jlink)}"
                                 f" {get_exe_file(args, True, use_jlink)}")
                     exec_command(sign_com)
-            return 1
-    else:
+            ret_val = 1
+    print("= Elapsed time:", timedelta(seconds=round(time()-start)))
+    if build_res != 0:
         error_exit("Build failed")
-    return 0
+    return ret_val
 
 #--------------------------------------------------------------------
 
@@ -274,7 +280,13 @@ def vscode():
     build()
     os.chdir(cwd)
     vscode_files()
-    exec_command(f"code . -g {examples_root}{args.example}/src/main.c")
+    workspace  = glob(f"{cwd}/*.code-workspace")
+    if len(workspace) > 0:
+        param = workspace[0]
+        print(f"Using workspace:", os.path.basename(workspace[0]))
+    else:
+        param = f". -g {examples_root}{args.example}/src/main.c"
+    exec_command(f"code {param}")
 
 #--------------------------------------------------------------------
 

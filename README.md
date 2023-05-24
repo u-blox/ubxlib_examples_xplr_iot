@@ -204,3 +204,6 @@ Please note that this command will only work for examples that has defined CONFI
 
     do flash_net -e ble_ibeacon_z
 
+### Visual Studio Code workspace
+
+Once VS Code has been opened via the **do vscode** command and you want to save your setup of windows etc you can save it as a workspace. The next time you then run this command it will detect the workspace and open it.
