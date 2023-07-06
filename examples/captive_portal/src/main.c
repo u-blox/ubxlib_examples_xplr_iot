@@ -48,11 +48,11 @@ static void button_pressed(int buttonNo, uint32_t holdTime)
     }
 }
 
-static bool portalExit(uDeviceHandle_t deviceHandle)
+static bool keepRunning(uDeviceHandle_t deviceHandle)
 {
     // Exit the portal when in connected mode if reset has been requested
     (void)deviceHandle;
-    return gDoReset;
+    return !gDoReset;
 }
 
 /* Connect to an access point or start the captive portal */
@@ -99,7 +99,7 @@ void doConnect()
             uSockClose(sock);
             // Start the web server also in this mode in order to enable possibility
             // to change the selected network also when connected, mainly for testing.
-            while (uWifiCaptivePortal(gDeviceHandle, NULL, NULL, portalExit) == 0) {
+            while (uWifiCaptivePortal(gDeviceHandle, NULL, NULL, keepRunning) == 0) {
                 gDoReset = false;
             }
             gDoReset = true;
