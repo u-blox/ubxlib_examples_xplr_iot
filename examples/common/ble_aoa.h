@@ -31,3 +31,10 @@ bool bleAoaInit(char *pBleId);
  * @return       Success or failure.
  */
 bool bleAoaAdvertise(uint16_t min_ms, uint16_t max_ms, bool on);
+
+/** Set or update the periodic advertising data.
+ * Advertising must be initialized before calling.
+ * @param data  Advertising data.
+ * @param len   Advertising data length.
+ */
+bool bleAoaSetAdvData(const uint8_t *data, uint8_t len);

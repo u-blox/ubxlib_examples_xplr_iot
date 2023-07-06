@@ -75,6 +75,8 @@ static struct bt_data m_adv_data[] = {
                  )
 };
 
+static bool gIsAdvertising = false;
+
 static bool set_adv_params(uint16_t min_ms, uint16_t max_ms)
 {
     struct bt_le_per_adv_param per_adv_param = {
@@ -128,5 +130,15 @@ bool bleAoaAdvertise(uint16_t min, uint16_t max, bool on)
              bt_le_per_adv_start(m_ext_adv) == 0 &&
              bt_le_ext_adv_start(m_ext_adv, &m_ext_adv_start_param) == 0;
     }
+    gIsAdvertising = on && ok;
     return ok;
+}
+
+bool bleAoaSetAdvData(const uint8_t *data, uint8_t len)
+{
+    struct bt_data adData;
+    adData.type = BT_DATA_MANUFACTURER_DATA;
+    adData.data = data;
+    adData.data_len = len;
+    return (gIsAdvertising && (bt_le_per_adv_set_data(m_ext_adv, &adData, 1) == 0));
 }

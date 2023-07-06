@@ -103,6 +103,7 @@ void main()
                 }
                 buffer[rxSize] = 0;
                 printf("Received: %s\n", buffer);
+                uSockClose(sock);
             } else {
                 printf("* Failed to connect: %d", errorCode);
             }

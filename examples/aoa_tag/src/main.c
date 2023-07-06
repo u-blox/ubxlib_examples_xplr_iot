@@ -64,7 +64,7 @@ void main(void)
 {
     buttonsInit(button_pressed);
     ledsInit();
-    if (bleAoaInit()) {
+    if (bleAoaInit(NULL)) {
         updateInterval();
         printf("AoA tag started\n");
     } else {
