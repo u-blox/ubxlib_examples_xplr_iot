@@ -12,119 +12,156 @@ rem distributed under the License is distributed on an "AS IS" BASIS,
 rem WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 rem See the License for the specific language governing permissions and
 
-net session >nul 2>nul || (echo ** This script must be run as administrator. & pause & exit /b 1)
+setlocal
+
+set NCS_ROOT=%SystemDrive%\ncs
+set NCS_ROOT=%SystemDrive%\ncs
+if "%NCS_VERS%" == "" (set NCS_VERS=v2.2.0)
+
+set ADMIN_SUCC_FILE=%TEMP%\%~n0_admin.log
+set ERR_FILE=%TEMP%\_err.txt
+set PIP_COM=pip3 --disable-pip-version-check install -q
+
+net session >nul 2>nul && (set IS_ADMIN=1)
+if "%1" == "admin" (goto AdminInstall)
+if defined IS_ADMIN (echo ** This script should not be started as administrator. & pause & exit /b 1)
+
+if "%1" == "sdk" (goto SDKInstall)
+
 echo.
 echo === Installing all the required tools and packages for XPLR-IOT-1 examples
-echo === This will be a lengthy process, please be patient
+echo === This will be a lengthy process (10-20 min), please be patient
 echo.
-
-setlocal
-set ERR_FILE=%TEMP%\_err.txt
-set ROOT_DIR=%USERPROFILE%\xplriot1
-set ENV_DIR=%ROOT_DIR%\env
-set GIT_ENV_DIR=%ENV_DIR:\=/%
-set NCS_VERS=v2.1.0
-set PIP_COM=pip3 --disable-pip-version-check install -q
 
 echo Started at: %date% %time%
 
-rem Avoid possible path length problem
-call :SilentCom "reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /f /v LongPathsEnabled /t REG_DWORD /d 1"
+echo Installing tools which require administrator priviledges...
+del %ADMIN_SUCC_FILE% 2>NUL
+call powershell -Command "Start-Process -Wait -Verb RunAs '%~f0' admin"
+if NOT exist %ADMIN_SUCC_FILE% goto AdminFailed
 
-cd /d "%USERPROFILE%"
-echo Installing tool packages...
-"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -InputFormat None -ExecutionPolicy Bypass ^
-   -Command "[System.Net.ServicePointManager]::SecurityProtocol = 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))" ^
-   1>nul 2>%ERR_FILE% || (type %ERR_FILE% & exit /b 1)
-set PATH=%ALLUSERSPROFILE%\chocolatey\bin;%PATH%
-call :SilentCom "choco install -y --no-progress cmake --installargs 'ADD_CMAKE_TO_PATH=System'"
-call :SilentCom "choco install -y --no-progress ninja gperf git.commandline dtc-msys2 wget curl unzip nrfjprog tartool ccache which"
-call refreshenv >nul
-call python --version 2>&1 | findstr 3. >NUL
-IF %ERRORLEVEL% EQU 0 goto west
-echo Installing Python...
-set PY_INST=py_inst.exe
-curl -s https://www.python.org/ftp/python/3.11.3/python-3.11.3-amd64.exe >%PY_INST%
-call %PY_INST% /quiet PrependPath=1 InstallAllUsers=0 Include_test=0 TargetDir=%ENV_DIR%\Python
-del %PY_INST%
-call refreshenv >nul
-:west
-echo Installing west...
-call :SilentCom "%PIP_COM% west"
-set TarFile=newtmgr.tar.gz
-curl -s https://archive.apache.org/dist/mynewt/apache-mynewt-1.4.1/apache-mynewt-newtmgr-bin-windows-1.4.1.tgz >%TarFile%
-call tar -O -xf %TarFile% "*newtmgr.exe" >%ALLUSERSPROFILE%\chocolatey\bin\newtmgr.exe
-del %TarFile%
-
-echo Installing nRF Connect SDK...
-mkdir %ENV_DIR%\ncs
-cd /d  %ENV_DIR%\ncs
-call :SilentCom "west init -m https://github.com/nrfconnect/sdk-nrf --mr %NCS_VERS%"
-rem Avoid possible owner protection problems as we will clone as admin
-call :SilentCom "takeown /r /f %ENV_DIR%\ncs"
-call :SilentCom "west update"
-call :SilentCom "west zephyr-export"
-
-echo Installing additional Python requirements...
-%PIP_COM% -r zephyr/scripts/requirements.txt >nul 2>&1
-%PIP_COM% -r nrf/scripts/requirements.txt >nul 2>&1
-%PIP_COM% -r bootloader/mcuboot/scripts/requirements.txt >nul 2>&1
-
-echo Installing ARM compiler...
-cd ..
-set GCCLoc=https://armkeil.blob.core.windows.net/developer/Files/downloads/gnu-rm/10-2020q4
-set GCCName=gcc-arm-none-eabi-10-2020-q4-major
-set GCCZip=%GCCName%-win32.zip
-wget -q %GCCLoc%/%GCCZip%
-call unzip -q -o %GCCZip%
-del %GCCZip%
-
-echo Installing Visual Studio Code...
-set CodeInstaller=code_inst.exe
-curl -s -L "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64" >%CodeInstaller%
-%CodeInstaller% /VERYSILENT /NORESTART /MERGETASKS=!runcode
-call refreshenv >nul
-del %CodeInstaller%
-echo Installing extensions...
+set PATH=%ProgramFiles%\Microsoft VS Code\bin;%PATH%
+echo Installing Visual Studio Code extensions...
 call :SilentCom "code --install-extension ms-vscode.cpptools-extension-pack"
 call :SilentCom "code --install-extension marus25.cortex-debug"
 call :SilentCom "code --uninstall-extension ms-vscode.cmake-tools"
 
-echo Installing JLink software...
-set JLinkExe=JLink_Windows_x86_64.exe
-curl -s -X POST https://www.segger.com/downloads/jlink/%JLinkExe% ^
-       -H "Content-Type: application/x-www-form-urlencoded" ^
-       -d "accept_license_agreement=accepted" >%JLinkExe%
-%JLinkExe% /S
-del %JLinkExe%
+echo Installing nrf-connect environment tools...
+mkdir %NCS_ROOT% >nul 2>&1
+cd /D %NCS_ROOT%
+set MGR_CMD=nrfutil-toolchain-manager.exe
+if NOT exist %MGR_CMD% (
+  curl -s https://raw.githubusercontent.com/NordicSemiconductor/pc-nrfconnect-toolchain-manager/main/resources/nrfutil-toolchain-manager/win32/%MGR_CMD% -o %MGR_CMD%
+  curl -s https://raw.githubusercontent.com/NordicSemiconductor/pc-nrfconnect-toolchain-manager/main/resources/nrfutil-toolchain-manager/win32/vcruntime140.dll -o vcruntime140.dll
+)
+if NOT exist %NCS_ROOT%\toolchains\%NCS_VERS% (
+  %MGR_CMD% install --ncs-version %NCS_VERS% --install-dir %NCS_ROOT%
+)
 
-echo Installing serial port driver...
-set DriverName=CP210x_Universal_Windows_Driver
-set DriverZip=%DriverName%.zip
-wget -q https://www.silabs.com/documents/public/software/%DriverZip%
-call unzip -q -o -d %DriverName% %DriverZip%
-del %DriverZip%
-cd %DriverName%
-call :SilentCom "pnputil /add-driver silabser.inf"
-cd ..
-rmdir /S /Q %DriverName%
+%MGR_CMD% launch --install-dir %NCS_ROOT% --toolchain-path %NCS_ROOT%\toolchains\%NCS_VERS% "%~f0" sdk
 
-cd ..
+goto eof
+
+:SDKInstall
+set NCS_DIR=%NCS_ROOT%\%NCS_VERS%
+if NOT exist %NCS_DIR% (
+  echo Installing nrf-connect SDK version %NCS_VERS% ...
+  mkdir %NCS_DIR%
+  cd /D %NCS_DIR%
+  call :SilentCom "west init -m https://github.com/nrfconnect/sdk-nrf --mr %NCS_VERS%"
+  call :SilentCom "west update"
+  call :SilentCom "west zephyr-export"
+
+  echo Installing additional Python requirements...
+  %PIP_COM% -r zephyr/scripts/requirements.txt >nul 2>&1
+  %PIP_COM% -r nrf/scripts/requirements.txt >nul 2>&1
+  %PIP_COM% -r bootloader/mcuboot/scripts/requirements.txt >nul 2>&1
+)
+
+cd %USERPROFILE%
 echo Getting the source code repositories...
 call git clone --recursive -q https://github.com/u-blox/ubxlib_examples_xplr_iot
-cd ubxlib_examples_xplr_iot
-call python do -n %ENV_DIR%\ncs -t %ENV_DIR%\%GCCName% save
-call :SilentCom "takeown /r /f %ROOT_DIR%\ubxlib_examples_xplr_iot"
-call git config --global --add safe.directory %GIT_ENV_DIR%/ncs/zephyr
+cd /D ubxlib_examples_xplr_iot
+
+set NEWT_FILE=newtmgr.exe
+set NEWT_TAR_FILE=%TEMP%\newtmgr.tar.gz
+if NOT exist %NEWT_FILE% (
+  curl -s https://archive.apache.org/dist/mynewt/apache-mynewt-1.4.1/apache-mynewt-newtmgr-bin-windows-1.4.1.tgz >%NEWT_TAR_FILE%
+  call tar -O -xf %NEWT_TAR_FILE% "*%NEWT_FILE%" >%NEWT_FILE%
+  del %NEWT_TAR_FILE%
+)
+
+set DO_CMD=do.bat
+echo @set NCS_DIR=%NCS_DIR%>%DO_CMD%
+echo @set PATH=^%%PATH^%%;^%%ProgramFiles^%%\Microsoft VS Code\bin>>%DO_CMD%
+echo @%NCS_ROOT%\%MGR_CMD% launch --ncs-version %NCS_VERS% --install-dir %NCS_ROOT% cmd /c -- python do.py %%* >>%DO_CMD%
 
 echo Ended at: %date% %time%
 echo.
 echo ======= All done! =======
 echo.
 pause
-goto:eof
+goto eof
+
+:AdminInstall
+if NOT defined IS_ADMIN (echo ** This part must be run as administrator. & pause & exit /b 1)
+
+rem Avoid possible path length problem
+call :SilentCom "reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /f /v LongPathsEnabled /t REG_DWORD /d 1"
+
+cd %TEMP%
+set CODE_INSTALLER=code_inst.exe
+if NOT exist "%ProgramFiles%\Microsoft VS Code" (
+  echo Installing Visual Studio Code...
+  curl -s -L "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64" >%CODE_INSTALLER%
+  %CODE_INSTALLER% /VERYSILENT /NORESTART /MERGETASKS=!runcode
+  del %CODE_INSTALLER%
+)
+
+set JLINK_INSTALLER=JLink_Windows_x86_64.exe
+if NOT exist "%ProgramFiles%\SEGGER\JLink" (
+  echo Installing JLink software...
+  curl -s -X POST https://www.segger.com/downloads/jlink/%JLINK_INSTALLER% ^
+         -H "Content-Type: application/x-www-form-urlencoded" ^
+         -d "accept_license_agreement=accepted" >%JLINK_INSTALLER%
+  start /wait %JLINK_INSTALLER% /S
+  del %JLINK_INSTALLER%
+)
+
+set NRF_CMD_DIR=%ProgramFiles%\Nordic Semiconductor\nrf-command-line-tools\bin
+set NRF_CMD_INSTALLER=nrf-command-line-tools-10.23.0-x64.exe
+if NOT exist "%NRF_CMD_DIR%" (
+  echo Installing Nordic command line tools...
+  curl -s -L https://nsscprodmedia.blob.core.windows.net/prod/software-and-other-downloads/desktop-software/nrf-command-line-tools/sw/versions-10-x-x/10-23-0/%NRF_CMD_INSTALLER% >%NRF_CMD_INSTALLER%
+  start /wait %NRF_CMD_INSTALLER% /passive /quiet
+  del %NRF_CMD_INSTALLER%
+  setx PATH "%PATH%;%NRF_CMD_DIR%" >nul
+)
+
+echo Installing serial port driver...
+set DRIVER_NAME=CP210x_Universal_Windows_Driver
+set DRIVER_ZIP=%DRIVER_NAME%.zip
+curl -s -L https://www.silabs.com/documents/public/software/%DRIVER_ZIP% >%DRIVER_ZIP%
+mkdir %DRIVER_NAME%
+call tar -C %DRIVER_NAME% -xf %DRIVER_ZIP%
+del %DRIVER_ZIP%
+cd %DRIVER_NAME%
+call :SilentCom "pnputil /add-driver silabser.inf"
+cd ..
+rmdir /S /Q %DRIVER_NAME%
+
+echo OK >%ADMIN_SUCC_FILE%
+
+goto eof
+
+:AdminFailed
+echo Installation aborted!
+pause
+goto eof
 
 :SilentCom
 rem Execute a command without any printouts unless an error occurs
 %~1 1>nul 2>%ERR_FILE% || (type %ERR_FILE% & pause & exit 1)
 exit /b 0
+
+:eof
