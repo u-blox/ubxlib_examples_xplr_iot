@@ -16,42 +16,35 @@ based on the Nordic nrf53dk board
 	bme280@76 {
 		compatible = "bosch,bme280";
 		reg = <0x76>;
-		label = "BME280";
 	};
 
 	adxl345@1d {
 		compatible = "adi,adxl345";
 		reg = <0x1d>;
-		label = "ADXL345";
 	};
 
 	lis3mdl@1e {
 		compatible = "st,lis3mdl-magn";
 		reg = <0x1e>;
-		label = "LIS3MDL";
 	};
 
 	fxas21002@20 {
 		compatible = "nxp,fxas21002";
 		reg = <0x20>;
-		label = "FXAS21002";
 	};
 
 	lis2dh@19 {
 		compatible = "st,lis2dh";
 		reg = <0x19>;
-		label = "LIS2DH";
 	};
 
 	ltr303: ltr303@29 {
 		compatible = "ltr,303als";
 		reg = <0x29>;
-		label = "LTR303";
 	};
 
 	bq27421@55 {
 		compatible = "ti,bq274xx";
-		label = "BQ274XX";
 		reg = <0x55>;
 		design-voltage = <3700>;
 		design-capacity = <1200>;

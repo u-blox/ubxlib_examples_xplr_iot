@@ -37,16 +37,14 @@ echo Started at: %date% %time%
 
 echo Installing tools which require administrator priviledges...
 del %ADMIN_SUCC_FILE% 2>NUL
-call powershell -Command "Start-Process -Wait -Verb RunAs '%~f0' admin"
+call powershell -Command "Start-Process -Wait -Verb RunAs '%~f0' admin" 2>nul
 if NOT exist %ADMIN_SUCC_FILE% goto AdminFailed
 
 set PATH=%ProgramFiles%\Microsoft VS Code\bin;%PATH%
 echo Installing Visual Studio Code extensions...
 call :SilentCom "code --install-extension ms-vscode.cpptools-extension-pack"
 call :SilentCom "code --install-extension marus25.cortex-debug"
-call :SilentCom "code --uninstall-extension ms-vscode.cmake-tools"
 
-echo Installing nrf-connect environment tools...
 mkdir %NCS_ROOT% >nul 2>&1
 cd /D %NCS_ROOT%
 set MGR_CMD=nrfutil-toolchain-manager.exe
@@ -55,6 +53,7 @@ if NOT exist %MGR_CMD% (
   curl -s https://raw.githubusercontent.com/NordicSemiconductor/pc-nrfconnect-toolchain-manager/main/resources/nrfutil-toolchain-manager/win32/vcruntime140.dll -o vcruntime140.dll
 )
 if NOT exist %NCS_ROOT%\toolchains\%NCS_VERS% (
+  echo Installing nrf-connect environment tools...
   %MGR_CMD% install --ncs-version %NCS_VERS% --install-dir %NCS_ROOT%
 )
 
@@ -79,9 +78,13 @@ if NOT exist %NCS_DIR% (
 )
 
 cd %USERPROFILE%
-echo Getting the source code repositories...
-call git clone --recursive -q https://github.com/u-blox/ubxlib_examples_xplr_iot
-cd /D ubxlib_examples_xplr_iot
+
+set REPO_NAME=ubxlib_examples_xplr_iot
+if NOT exist %REPO_NAME% (
+  echo Getting the source code repositories...
+  call git clone --recursive -q https://github.com/u-blox/%REPO_NAME%
+)
+cd /D %REPO_NAME%
 
 set NEWT_FILE=newtmgr.exe
 set NEWT_TAR_FILE=%TEMP%\newtmgr.tar.gz

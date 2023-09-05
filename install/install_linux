@@ -59,7 +59,6 @@ if [ ! -f "`which code`" ]; then
   rm $VSCODE_DEB
   silent_com code --install-extension ms-vscode.cpptools-extension-pack
   silent_com code --install-extension marus25.cortex-debug
-  silent_com code --uninstall-extension ms-vscode.cmake-tools
 fi
 
 if [ ! -f "`which nrfjprog`" ]; then
@@ -86,12 +85,12 @@ mkdir -p $NCS_ROOT
 MGR_NAME=nrfutil-toolchain-manager
 MGR_CMD=$NCS_ROOT/$MGR_NAME
 if [ ! -f "$MGR_CMD" ]; then
-  echo "Installing nrf-connect environment tools..."
   curl -s https://raw.githubusercontent.com/NordicSemiconductor/pc-nrfconnect-toolchain-manager/main/resources/nrfutil-toolchain-manager/linux/$MGR_NAME.exe -o $MGR_CMD
   chmod +x $MGR_CMD
 fi
 
 if [ ! -d "$NCS_ROOT/toolchains/$NCS_VERS" ]; then
+  echo "Installing nrf-connect environment tools..."
   $MGR_CMD install --ncs-version $NCS_VERS --install-dir $NCS_ROOT
 fi
 MGR_EXE="$MGR_CMD launch --shell --"

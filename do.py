@@ -295,6 +295,9 @@ def vscode():
         print(f"Using workspace:", os.path.basename(workspace[0]))
     else:
         param = f". -g {examples_root}{args.example}/src/main.c"
+    # Disable extensions which may cause confusing messages
+    param += " --disable-extension ms-vscode.cmake-tools"
+    param += " --disable-extension platformio.platformio-ide"
     exec_command(f"code {param}")
 
 #--------------------------------------------------------------------
