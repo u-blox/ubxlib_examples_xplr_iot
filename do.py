@@ -13,7 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 
-# do
+# do.py
 #
 # Wrapper command for building and flashing the XPLR-IOT-1 examples.
 # Also handles Visual Studio Code integration.
@@ -30,6 +30,7 @@ from time import time
 from serial.tools import list_ports, miniterm
 from pathlib import Path
 from glob import glob
+from shutil import which
 
 # Global variables
 settings = dict()
@@ -95,7 +96,7 @@ def build():
             ret_val = 1
         path = f"{args.build_dir}/zephyr/zephyr"
         if not args.no_bootloader and ret_val == 1:
-            mcuboot_dir = settings['ncs_dir'] + "/bootloader/mcuboot"
+            mcuboot_dir = Path(os.environ['NCS_DIR']).as_posix() + "/bootloader/mcuboot"
             for use_jlink in (False, True):
                 if exists(get_exe_file(args, False, use_jlink)):
                     sign_com = (f"\"{sys.executable}\" \"{mcuboot_dir}/scripts/imgtool.py\" sign"
@@ -125,7 +126,7 @@ def flash_file(file_name, net_cpu = False):
         uart0 = find_uart0()
         print("Restart the XPLR-IOT-1 simultaneously pressing button 1")
         input("Press return when ready: ")
-        serial_flash_com = f"newtmgr --conntype serial --connstring \"{uart0},baud=115200\""
+        serial_flash_com = f"{top_dir}/newtmgr --conntype serial --connstring \"{uart0},baud=115200\""
         com = f"{serial_flash_com} image upload {file_name}"
 
     exec_command(com)
@@ -181,6 +182,12 @@ def debug():
 
 #--------------------------------------------------------------------
 
+def terminal():
+    com = "bash --rcfile .bashrc" if is_linux else "start cmd"
+    exec_command(com)
+
+#--------------------------------------------------------------------
+
 settings_file_name = ".settings"
 
 def read_settings():
@@ -218,11 +225,13 @@ def save_state():
 def vscode_files():
     vscode_dir = cwd + "/.vscode"
     templ_dir = top_dir + "/.vscode"
-    do_com = "python3" if is_linux else "python"
-    do_com += " \\\"" + Path(top_dir).as_posix() + "/do\\\""
+    do_com = "\\\"" + Path(top_dir).as_posix() + "/do"
+    if not is_linux:
+        do_com += ".bat"
+    do_com += "\\\""
     if not exists(vscode_dir):
         os.mkdir(vscode_dir)
-    gcc_bin_dir = Path(os.path.expandvars(settings['gcc_dir']) + "/bin").as_posix()
+    gcc_bin_dir = Path(os.path.dirname(which("arm-zephyr-eabi-gcc"))).as_posix()
 
     # Generate configuration file for vscode from templates
     # Tasks
@@ -240,7 +249,7 @@ def vscode_files():
     launch = re.sub("\$BUILD_DIR", Path(f"{settings['build_dir']}/{args.example}").as_posix(), launch)
     launch = re.sub("\$EXE_FILE", os.path.basename(get_exe_file(args, not args.no_bootloader, True, False)), launch)
     launch = re.sub("\$TC_DIR", gcc_bin_dir, launch)
-    gdb_exe = sorted(Path(gcc_bin_dir).rglob(f"*gdb{exe_suffix}"))[0].as_posix()
+    gdb_exe = Path(which("arm-zephyr-eabi-gdb")).as_posix()
     launch = re.sub("\$GDB_PATH", gdb_exe, launch)
     with open(vscode_dir + "/launch.json", "w") as f:
         f.write(launch)
@@ -286,6 +295,9 @@ def vscode():
         print(f"Using workspace:", os.path.basename(workspace[0]))
     else:
         param = f". -g {examples_root}{args.example}/src/main.c"
+    # Disable extensions which may cause confusing messages
+    param += " --disable-extension ms-vscode.cmake-tools"
+    param += " --disable-extension platformio.platformio-ide"
     exec_command(f"code {param}")
 
 #--------------------------------------------------------------------
@@ -298,11 +310,7 @@ def select():
 
 def set_env():
     os.environ['DO_TOP_DIR'] = top_dir
-    os.environ['ZEPHYR_BASE'] = os.path.expandvars(settings['ncs_dir']) + "/zephyr"
-    if 'gcc_dir' in settings:
-        os.environ['GNUARMEMB_TOOLCHAIN_PATH'] = os.path.expandvars(
-            settings['gcc_dir'])
-    os.environ['ZEPHYR_TOOLCHAIN_VARIANT'] = "gnuarmemb"
+    os.environ['ZEPHYR_BASE'] = Path(os.environ['NCS_DIR'] + "/zephyr").as_posix()
     os.environ['UBXLIB_DIR'] = os.path.expandvars(settings['ubxlib_dir'])
     if not settings['no_bootloader']:
         os.environ['USE_BL'] = "1"
@@ -321,66 +329,8 @@ def set_env():
 
 def check_directories():
     global settings
-    # nRFConnect directory
-    if args.ncs_dir != None:
-        settings['ncs_dir'] = args.ncs_dir
-    elif not 'ncs_dir' in settings:
-        if 'ZEPHYR_BASE' in os.environ:
-            settings['ncs_dir'] = os.path.realpath(os.environ['ZEPHYR_BASE'] + "/..")
-        else:
-            ncs_dir = os.environ['HOME'] if is_linux else os.environ['SystemDrive']
-            ncs_dir += "/ncs"
-            version = ""
-            if exists(ncs_dir):
-                # Find latest installed version
-                for entry in os.scandir(ncs_dir):
-                    if entry.is_dir() and re.search(r"v\d\.\d\.\d", entry.name):
-                        version = entry.name
-            if not version:
-                error_exit("Failed to detect suitable nRFConnect directory")
-            settings['ncs_dir'] = ncs_dir + "/" + version
-            print(f"Using ncs version: {version}")
-    if not exists(os.path.expandvars(settings['ncs_dir'])):
-        error_exit("nRFConnect directory not found")
 
-    # GCC directory, this can be explicitly specified or indirect via nRFConnect
-    # directory above. In this case the whole environment is setup via the path
-    use_tc = False
-    if args.gcc_dir != None:
-        settings['gcc_dir'] = args.gcc_dir
-    elif not 'gcc_dir' in settings:
-        m = re.search(r"(v\d\.\d\.\d)", settings['ncs_dir'])
-        if m:
-            tc_dir = settings['ncs_dir'] + "/../toolchains/" + m.group(1)
-            if not exists(tc_dir):
-                tc_dir = settings['ncs_dir'] + "/toolchain"
-            if exists(tc_dir):
-                # Setup and use a complete ncs toolchain
-                use_tc = True
-                tc_dir = os.path.realpath(tc_dir)
-                path = ""
-                gcc_bin_dir = sorted(Path(tc_dir).rglob(f"*gcc{exe_suffix}"))[0].parent
-                settings['gcc_dir'] = (gcc_bin_dir  / '../').resolve().as_posix()
-                if is_linux:
-                    path += tc_dir + "/usr/bin:"
-                    path += tc_dir + "/usr/local/bin:"
-                    path += tc_dir + "/opt/bin:"
-                    path += tc_dir + "/opt/nanopb/generator-bin:"
-                    path += gcc_bin_dir.as_posix()
-                else:
-                    path += tc_dir + ";"
-                    path += tc_dir + "\\mingw64\\bin;"
-                    path += tc_dir + "\\bin;"
-                    path += tc_dir + "\\opt\\bin;"
-                    path += tc_dir + "\\opt\\bin\\Scripts;"
-                    path += tc_dir + "\\opt\\nanopb\\generator-bin;"
-                    path += str(gcc_bin_dir) + ";"
-                os.environ['PATH'] = path + os.environ['PATH']
-        if not use_tc:
-            error_exit("Failed to locate GCC directory")
-    if not use_tc and not exists(os.path.expandvars(settings['gcc_dir'])):
-        error_exit("GCC directory not found")
-
+    # Ubxlib location
     if args.ubxlib_dir != None:
         settings['ubxlib_dir'] = args.ubxlib_dir
     elif not 'ubxlib_dir' in settings:
@@ -400,12 +350,15 @@ def check_directories():
 
 if __name__ == "__main__":
 
+    if not 'NCS_DIR' in os.environ:
+        error_exit("This script must be run via the \"do\" command")
+
     os.chdir(top_dir)
     check_jlink()
 
     parser = argparse.ArgumentParser()
     parser.add_argument("operation", nargs='+',
-                        help="Operation to be performed: vscode, build, flash, run, monitor, debug",
+                        help="Operation to be performed: vscode, build, flash, run, monitor, debug, terminal",
                         )
     parser.add_argument("-e", "--example",
                         help="Name of the example",
@@ -424,12 +377,6 @@ if __name__ == "__main__":
                         )
     parser.add_argument("-d", "--build-dir",
                         help="Root directory for the build output"
-                        )
-    parser.add_argument("-n", "--ncs-dir",
-                        help="Nrf connect sdk installation directory"
-                        )
-    parser.add_argument("-t", "--gcc-dir",
-                        help="GCC toolchain installation directory"
                         )
     parser.add_argument("-u", "--ubxlib-dir",
                         help="Ubxlib directory"

@@ -19,82 +19,57 @@
 # Installs all the required packages, the nRF Connect SDK
 # and the examples repository.
 #
+set -e
 
 silent_com () {
   err_log=/tmp/_err_log.txt
   $@ >/dev/null 2>$err_log || cat $err_log
 }
 
-sudo echo
-echo "=== Installing all the required tools and packages for XPLR-IOT-1 examples"
-echo "=== This will be a lengthy process, please be patient"
+trap "exit" INT
 echo
+echo "=== Installing all the required tools and packages for XPLR-IOT-1 examples."
+echo "=== This will be a lengthy process (10-20 min), please be patient."
+echo
+echo "Admin rights are required."
+sudo -v
 
 start_time=$SECONDS
+
+NCS_ROOT=$HOME/ncs
+NCS_VERS=${1:-v2.2.0}
 
 PIP_INST="pip3 -q install --user"
 APT_COM="sudo apt-get -qq -y"
 ENV_DIR=$HOME/xplriot1/env
-NCS_VERSION=v2.1.0
 
-export PATH=$HOME/.local/bin:$PATH
-mkdir -p $HOME/.local/bin
+if [ ! -f "`which curl`" ]; then
+  echo "Installing required Linux packages..."
+  $APT_COM update
+  silent_com $APT_COM install wget curl
+fi
+# Enable free use of usb ports
+sudo usermod -a -G dialout $USER
 
-# Force sudo
-echo "Installing packages..."
-$APT_COM update
-silent_com $APT_COM install \
-   git wget curl libncurses5 python3-pip ninja-build gperf ccache dfu-util \
-   device-tree-compiler python3-setuptools python3-wheel xz-utils file make \
-   gcc gcc-multilib g++-multilib libsdl2-dev
-# Latest version of CMake is required
-silent_com sudo snap install cmake --classic
-# newtmgr used for mcuboot serial flashing
-NEWT_TAR=newtmgr.tar.gz
-NEWT_FILE=$HOME/.local/bin/newtmgr
-curl -s https://archive.apache.org/dist/mynewt/apache-mynewt-1.4.1/apache-mynewt-newtmgr-bin-linux-1.4.1.tgz >$NEWT_TAR
-tar -O -xf $NEWT_TAR --wildcards "*newtmgr" >$NEWT_FILE
-chmod +x $NEWT_FILE
-rm $NEWT_TAR
+if [ ! -f "`which code`" ]; then
+  VSCODE_DEB=/tmp/vscode.deb
+  echo "Installing Visual Studio Code..."
+  wget -q "https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x64" -O $VSCODE_DEB
+  silent_com $APT_COM install $VSCODE_DEB >/dev/null
+  rm $VSCODE_DEB
+  silent_com code --install-extension ms-vscode.cpptools-extension-pack
+  silent_com code --install-extension marus25.cortex-debug
+fi
 
-$PIP_INST west
-
-echo "Installing nRF Connect SDK..."
-NCS_DIR=$ENV_DIR/ncs
-mkdir -p $NCS_DIR
-cd $NCS_DIR
-silent_com west init -m https://github.com/nrfconnect/sdk-nrf --mr $NCS_VERSION
-silent_com west update
-silent_com west zephyr-export
-
-echo "Installing additional Python requirements..."
-silent_com $PIP_INST -r zephyr/scripts/requirements.txt
-silent_com $PIP_INST -r nrf/scripts/requirements.txt
-silent_com $PIP_INST -r bootloader/mcuboot/scripts/requirements.txt
-
-echo "Installing Nordic command line tools..."
-NRF_CMDS=/tmp/nrf_cmds.deb
-wget -q \
-"https://www.nordicsemi.com/-/media/Software-and-other-downloads/Desktop-software/nRF-command-line-tools/sw/Versions-10-x-x/10-15-4/nrf-command-line-tools_10.15.4_amd64.deb" \
--O $NRF_CMDS
-silent_com $APT_COM install $NRF_CMDS
-rm $NRF_CMDS
-
-echo "Installing ARM compiler..."
-cd ..
-ARM_VER=gcc-arm-none-eabi-10-2020-q4-major
-bash -c \
-   "wget -q https://developer.arm.com/-/media/Files/downloads/gnu-rm/10-2020q4/${ARM_VER}-x86_64-linux.tar.bz2 -O- | \
-   bunzip2 -c | tar -x"
-
-VSCODE_DEB=/tmp/vscode.deb
-echo "Installing Visual Studio Code..."
-wget -q "https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x64" -O $VSCODE_DEB
-silent_com $APT_COM install $VSCODE_DEB >/dev/null
-rm $VSCODE_DEB
-silent_com code --install-extension ms-vscode.cpptools-extension-pack
-silent_com code --install-extension marus25.cortex-debug
-silent_com code --uninstall-extension ms-vscode.cmake-tools
+if [ ! -f "`which nrfjprog`" ]; then
+  echo "Installing Nordic command line tools..."
+  NRF_CMDS=/tmp/nrf_cmds.deb
+  wget -q \
+  "https://www.nordicsemi.com/-/media/Software-and-other-downloads/Desktop-software/nRF-command-line-tools/sw/Versions-10-x-x/10-15-4/nrf-command-line-tools_10.15.4_amd64.deb" \
+  -O $NRF_CMDS
+  silent_com $APT_COM install $NRF_CMDS
+  rm $NRF_CMDS
+fi
 
 if [ ! -f "`which JLinkConfig`" ]; then
   echo "Installing JLink software..."
@@ -106,22 +81,70 @@ if [ ! -f "`which JLinkConfig`" ]; then
   rm $JLINK_DEB
 fi
 
-echo "Getting the source code repositories..."
-cd ..
-git clone --recursive -q https://github.com/u-blox/ubxlib_examples_xplr_iot
-cd ubxlib_examples_xplr_iot
-./do -n $ENV_DIR/ncs -t $ENV_DIR/$ARM_VER save
+mkdir -p $NCS_ROOT
+MGR_NAME=nrfutil-toolchain-manager
+MGR_CMD=$NCS_ROOT/$MGR_NAME
+if [ ! -f "$MGR_CMD" ]; then
+  curl -s https://raw.githubusercontent.com/NordicSemiconductor/pc-nrfconnect-toolchain-manager/main/resources/nrfutil-toolchain-manager/linux/$MGR_NAME.exe -o $MGR_CMD
+  chmod +x $MGR_CMD
+fi
 
-# Enable free use of usb ports
-sudo usermod -a -G dialout $USER
+if [ ! -d "$NCS_ROOT/toolchains/$NCS_VERS" ]; then
+  echo "Installing nrf-connect environment tools..."
+  $MGR_CMD install --ncs-version $NCS_VERS --install-dir $NCS_ROOT
+fi
+MGR_EXE="$MGR_CMD launch --shell --"
+
+NCS_DIR=$NCS_ROOT/$NCS_VERS
+if [ ! -d "$NCS_DIR" ]; then
+  echo "Installing nrf-connect SDK version $NCS_VERS"
+  mkdir -p $NCS_DIR
+  cd $NCS_DIR
+  silent_com $MGR_EXE west init -m https://github.com/nrfconnect/sdk-nrf --mr $NCS_VERS
+  silent_com $MGR_EXE west update
+  silent_com $MGR_EXE west zephyr-export
+
+  echo "Installing additional Python requirements..."
+  silent_com $MGR_EXE $PIP_INST -r zephyr/scripts/requirements.txt
+  silent_com $MGR_EXE $PIP_INST -r nrf/scripts/requirements.txt
+  silent_com $MGR_EXE $PIP_INST -r bootloader/mcuboot/scripts/requirements.txt
+fi
+
+UP_DIR=$(realpath $(dirname $(readlink -f $0))/..)
+if [ ! -f "$UP_DIR/do.py" ]; then
+  echo "Getting the source code repositories..."
+  cd $HOME
+  $MGR_EXE git clone --recursive -q https://github.com/u-blox/ubxlib_examples_xplr_iot
+  cd ubxlib_examples_xplr_iot
+else
+  # Running from the repository
+  cd $UP_DIR
+fi
+
+# newtmgr used for mcuboot serial flashing
+NEWT_TAR=/tmp/newtmgr.tar.gz
+NEWT_FILE=newtmgr
+if [ ! -f "$NEWT_FILE" ]; then
+  curl -s https://archive.apache.org/dist/mynewt/apache-mynewt-1.4.1/apache-mynewt-newtmgr-bin-linux-1.4.1.tgz >$NEWT_TAR
+  tar -O -xf $NEWT_TAR --wildcards "*newtmgr" >$NEWT_FILE
+  chmod +x $NEWT_FILE
+  rm $NEWT_TAR
+fi
+# Create command file
+DO_CMD="export NCS_DIR=$NCS_DIR"
+DO_CMD+=$'\n'
+DO_CMD+="$MGR_CMD launch --ncs-version $NCS_VERS --install-dir $NCS_ROOT --shell -- python3 $PWD/do.py \$*"
+DO_CMD=${DO_CMD//$HOME/\$HOME}
+DO_CMD_FILE=do
+echo "$DO_CMD" >$DO_CMD_FILE
+chmod +x $DO_CMD_FILE
+# Prompt settings for terminal command
+echo 'export PS1="\[\033[0;33m\]ncs-'$NCS_VERS':\w\$\[\033[00m\] "' >.bashrc
+
+echo "nfconnect version $NCS_VERS will be used"
 
 elapsed=$(( SECONDS - start_time ))
 echo "All done!"
 eval "echo Elapsed time: $(date -ud "@$elapsed" +'%M min %S sec')"
-echo
-echo "**** Please note that the PATH has been updated."
-echo "**** Log out and in again or run 'source $HOME/.profile'"
-echo "**** in all command windows before starting any builds."
-
 
 

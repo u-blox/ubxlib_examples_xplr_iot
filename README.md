@@ -10,19 +10,12 @@ The main focus here is to make everything as uncomplicated as possible. The host
 
 The interface to building, running and debug software for ubxlib can be either the command line or [Microsoft Visual Studio Code](https://code.visualstudio.com/).
 
-Both Windows (Windows 10 tested) and Debian Linux (Ubuntu 20.04 tested) are supported.
+Both Windows (Windows 10, 11 tested) and Debian Linux (Ubuntu 20.04, 22.04 tested) are supported.
 
-There are two ways of using this repository depending on what you have installed on your PC.
+In order to get the required development environment and tools an installation script must first be run. This will use the Nordic standard installation for the nRF connect environment (currently version 2.2.0). If you already have this installed in the standard location it will be used and not reinstalled. Some additional tools like Visual Studio Code will also be installed unless already present.
 
-If you already have the Nordic nRFConnect SDK installed and know how to use it, you can just clone this repository and go on from there directly. If the environment is installed in the standard location it will be detected automatically.
+[Goto this page](install/README.md) for more information about the installation process.
 
-    git clone --recursive https://github.com/u-blox/ubxlib_examples_xplr_iot
-
-On the other hand if this is your first encounter with the Nordic nrf53 chipset and possibly also with git, a complete installation script which includes everything needed for development is provided. In this case [goto this page](install/README.md) for more information about the installation process.
-
-You can of course also install everything yourself following the instructions at the [Nordic web site](https://www.nordicsemi.com/Products/Development-software/nrf-connect-sdk). The repository has been tested with nRF Connect versions 1.7.0 up to 2.2.0. However some of the examples do require at least version 1.9.0.
-
-It also works if you have your own tailored installation. You just have to specify where to find the nRFConnect environment parts. More about this below.
 
 # Requirements
 
@@ -46,9 +39,7 @@ The WiFi captive portal example requires ubxlib version 1.3 or later, to be rele
 
 Once you have everything installed and have connected your XPLR-IOT-1, you can start exploring the functionality of this repository.
 
-Begin by starting a command window. Then change working directory to where the repository was cloned. If you have used the installation script this will be in a directory underneath your home directory named xplriot1\ubxlib_examples_xplr_iot.
-
-Please note that if you have installed the nRFConnect SDK via the "Toolchain Manager" desktop app you may have to start the command prompt via the corresponding entry in the dropdown list. This is the case if Python is not available in your standard path.
+Begin by starting a new command window. Then change working directory to where the repository was cloned. If you have used the installation script this will be in a directory underneath your home directory named ubxlib_examples_xplr_iot.
 
 Then issue the following command:
 
@@ -108,7 +99,7 @@ Below is the help information for the command as shown when issuing "do --help".
             operation [operation ...]
 
     positional arguments:
-    operation             Operation to be performed: vscode, build, flash, run, monitor, debug
+    operation             Operation to be performed: vscode, build, flash, run, monitor, debug, terminal
 
     optional arguments:
     -h, --help            show this help message and exit
@@ -132,10 +123,11 @@ The most typical operations are:
 | ----------- | ----------- |
 | **build**  | Will perform a build of the selected example. Corresponding to "west build" |
 | **vscode**  | First do a build and then start Visual Studio Code |
-| **flash**  | Build and then flash the XPLR-IOT-1|
-| **monitor**  | Start a serial port viewer/input in the current terminal|
+| **flash**  | Build and then flash the XPLR-IOT-1 |
+| **monitor**  | Start a serial port viewer/input in the current terminal |
 | **run**  | A combined build-flash-monitor operation |
 | **debug**  | Starts command line debugging using gdb |
+| **terminal**  | Starts a new command shell with the correct environment setup |
 
 These operations can also be started from within Visual Studio Code as described above.
 
@@ -153,8 +145,6 @@ There are some directories which are needed to be defined for the build process.
 
 | Option      | Description |
 | ----------- | ----------- |
-| **--ncs-dir**  | The root directory for the nRF Connect SDK installation. If the default location (C:\ncs \| ~/ncs) is used the latest version will be found automatically and used. If another location should be used it can be specified here.|
-| **--gcc-dir**  | The directory for the GCC ARM compiler. If a default installation of nRFConnect is found as above the one here will be used. If another location should be used it can be specified here.|
 | **--build-dir**  | By default all produced files from the build will be placed in a subdirectory named "-build". Use this option to place it elsewhere.|
 | **--ubxlib-dir**  | By default the ubxlib version used is the one which is included as a submodule to this repo. This is possible to override with this option.|
 
