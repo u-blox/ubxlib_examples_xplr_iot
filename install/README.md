@@ -2,30 +2,27 @@
 
 This directory contains the operating system specific installation scripts for the development tools required to build the XPLR-IOT-1 examples.
 
-These scripts installs all the necessary packages, tools and drivers from scratch. They can typically be used on a PC that has not been used for software development before or one with missing components.
+These scripts installs all the necessary packages, tools and drivers. The main installation is made using the Nordic installation program for nRF Connect and is thereby made into a separate space not interfering with possible already installed or different versions of tools. It will be installed in the standard directory, *C:\ncs* for Windows and *~/ncs* for Linux.
 
-The scripts will also install git and clone the actual repository.
+The script will also install VS Code, JLink software and possible required drivers (unless already present). This will require administrator rights and hence a privilege an elevation prompt will occur.
+
+Lastly the script will clone this repository. It will be stored in a sub directory to your home directory named *ubxlib_examples_xplr_iot*. Start a command prompt and change working directory to this and then you can start the operations described on the [main README page](https://github.com/u-blox/ubxlib_examples_xplr_iot).
+
+The installation will take quite some time (10-20 minutes) so please be patient. The main affecting factor is the download speed.
+
+Please note that this is a silent installation and that you by running it implicitly accept all possible license agreements for the installed tools.
 
 ## Windows
 
-[Click this link](https://github.com/u-blox/ubxlib_examples_xplr_iot/raw/master/install/install_windows.bat) and then chose "Save as" in the browser to download the installation script for Windows. Please note that depending on which browser you are using there may be an additional *.txt* extension added to the *.bat* file name. In that case remove the *.txt* extension.
+Start a command window and enter the following command:
 
-When the download is complete you also need to unblock the security option which is applied by default to a files downloaded from the network. Right click on the file in the Windows Explorer, select *Properties* in the menu and then check the *Unblock* option.
-
-Once all this has been done then right click on the file again and select *Run as administrator*. The installation will then start and it is quite a lengthy process, typically ~10 min.
+    curl -JLs -o %TMP%\i.bat https://github.com/u-blox/ubxlib_examples_xplr_iot/raw/master/install/install_windows.bat && %TMP%\i.bat
 
 **Please avoid** clicking in the window of this operation if you have *Quick Edit* for command windows enabled. Doing so may halt the downloading process which in turn can lead to timeouts and later problems for the installation.
 
-The [chocolatey](https://chocolatey.org/) package manager is used for installing the required tools. Python 3 will be installed from the standard Python installation repository. The required drivers for the XPLR-IOT-1 serial ports will also be installed.
-
-The examples repository is installed in a sub directory to your home directory named *xplriot1\ubxlib_examples_xplr_iot*. Start a command prompt and change working directory to this and then you can start the operations described on the [main README page](https://github.com/u-blox/ubxlib_examples_xplr_iot).
-
-![Install log](../readme_images/install_windows.png)
-
 ## Linux
 
-[Click this link](https://github.com/u-blox/ubxlib_examples_xplr_iot/raw/master/install/install_linux) and then chose "Save as" in the browser to download the installation script for Debian Linux. Once downloaded just run it. It will require sudo access as new packages will be installed. The installation will take some time so please be patient.
+Start a command window and enter the following command:
 
-When the installation has completed you should either log out and in again or run "source ~/.profile before doing any further operations related to this repository.
+    wget -qO - https://github.com/u-blox/ubxlib_examples_xplr_iot/raw/master/install/install_linux | $SHELL
 
-The examples repository is installed in a sub directory to your home directory named *~/xplriot1/ubxlib_examples_xplr_iot*. Start a command prompt and change working directory to this and then you can start the operations described in the [main README page](https://github.com/u-blox/ubxlib_examples_xplr_iot).
