@@ -84,8 +84,9 @@ fi
 mkdir -p $NCS_ROOT
 MGR_NAME=nrfutil-toolchain-manager
 MGR_CMD=$NCS_ROOT/$MGR_NAME
+MGR_VERS=v1.2.6
 if [ ! -f "$MGR_CMD" ]; then
-  curl -s https://raw.githubusercontent.com/NordicSemiconductor/pc-nrfconnect-toolchain-manager/main/resources/nrfutil-toolchain-manager/linux/$MGR_NAME.exe -o $MGR_CMD
+  curl -s https://raw.githubusercontent.com/NordicSemiconductor/pc-nrfconnect-toolchain-manager/$MGR_VERS/resources/nrfutil-toolchain-manager/linux/$MGR_NAME.exe -o $MGR_CMD
   chmod +x $MGR_CMD
 fi
 

@@ -15,7 +15,6 @@ rem See the License for the specific language governing permissions and
 setlocal
 
 set NCS_ROOT=%SystemDrive%\ncs
-set NCS_ROOT=%SystemDrive%\ncs
 if "%NCS_VERS%" == "" (set NCS_VERS=v2.2.0)
 
 set ADMIN_SUCC_FILE=%TEMP%\%~n0_admin.log
@@ -48,9 +47,10 @@ call :SilentCom "code --install-extension marus25.cortex-debug"
 mkdir %NCS_ROOT% >nul 2>&1
 cd /D %NCS_ROOT%
 set MGR_CMD=nrfutil-toolchain-manager.exe
+set MGR_VERS=v1.2.6
 if NOT exist %MGR_CMD% (
-  curl -s https://raw.githubusercontent.com/NordicSemiconductor/pc-nrfconnect-toolchain-manager/main/resources/nrfutil-toolchain-manager/win32/%MGR_CMD% -o %MGR_CMD%
-  curl -s https://raw.githubusercontent.com/NordicSemiconductor/pc-nrfconnect-toolchain-manager/main/resources/nrfutil-toolchain-manager/win32/vcruntime140.dll -o vcruntime140.dll
+  curl -s https://raw.githubusercontent.com/NordicSemiconductor/pc-nrfconnect-toolchain-manager/%MGR_VERS%/resources/nrfutil-toolchain-manager/win32/%MGR_CMD% -o %MGR_CMD%
+  curl -s https://raw.githubusercontent.com/NordicSemiconductor/pc-nrfconnect-toolchain-manager/%MGR_VERS%/resources/nrfutil-toolchain-manager/win32/vcruntime140.dll -o vcruntime140.dll
 )
 if NOT exist %NCS_ROOT%\toolchains\%NCS_VERS% (
   echo Installing nrf-connect environment tools...
